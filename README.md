@@ -5,17 +5,20 @@ hunk単位のコメント保存・レビュー完了管理ができます。
 
 ## 前提
 
-- Python 3.9 以上
+- Python 3.8 以上
 - `git` コマンドが利用可能であること
 - レビュー対象ディレクトリが git リポジトリであること
 
 ## インストール
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
-> Flask が依存ライブラリとして自動インストールされます。
+> Flask が依存ライブラリとして自動インストールされます。  
+> 仮想環境を使わずにシステムのPythonに直接インストールしたい場合は `pip install -e . --break-system-packages` を使用してください（非推奨）。
 
 ## 使い方
 

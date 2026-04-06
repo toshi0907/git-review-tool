@@ -29,6 +29,7 @@ def parse_diff(diff_text: str) -> list[FileInfo]:
     current_file: FileInfo | None = None
     current_hunk: HunkInfo | None = None
 
+    # unified diff hunk ヘッダー: @@ -old_start[,old_count] +new_start[,new_count] @@ [optional context]
     hunk_header_re = re.compile(r"^@@\s+-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s+@@")
 
     for line in diff_text.splitlines():

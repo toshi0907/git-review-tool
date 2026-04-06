@@ -52,6 +52,16 @@ git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --ho
 - コメント・レビュー状態は SQLite に永続化（サーバ再起動後も復元）
 - hunk hash（SHA256）による決定論的な hunk 識別
 
+## テスト
+
+```bash
+# 開発用依存（pytest）をインストール
+pip install -e ".[dev]"
+
+# テスト実行
+python -m pytest
+```
+
 ## ファイル構成
 
 ```

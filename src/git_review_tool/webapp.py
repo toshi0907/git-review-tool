@@ -35,12 +35,20 @@ def create_app(
 
     @app.route("/")
     def index():
-        # 各 hunk に保存済みコメント・レビュー状態を付与
+        # 全 hunk_hash を収集してバッチ取得
+        all_hashes = [
+            hunk["hunk_hash"]
+            for f in files
+            for hunk in f["hunks"]
+        ]
+        comments = storage.get_comments_batch(all_hashes)
+        reviewed_map = storage.get_reviewed_batch(all_hashes)
+
         for f in files:
             for hunk in f["hunks"]:
                 h = hunk["hunk_hash"]
-                hunk["saved_comment"] = storage.get_comment(h)
-                hunk["is_reviewed"] = storage.get_reviewed(h)
+                hunk["saved_comment"] = comments.get(h, "")
+                hunk["is_reviewed"] = reviewed_map.get(h, False)
         return render_template("review.html", files=files, commit=commit)
 
     @app.route("/api/comment", methods=["POST"])

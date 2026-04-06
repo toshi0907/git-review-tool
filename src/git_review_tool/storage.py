@@ -60,6 +60,18 @@ class Storage:
             ).fetchone()
         return row["comment_text"] if row else ""
 
+    def get_comments_batch(self, hunk_hashes: list[str]) -> dict[str, str]:
+        """複数の hunk_hash のコメントを一括取得する"""
+        if not hunk_hashes:
+            return {}
+        placeholders = ",".join("?" * len(hunk_hashes))
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"SELECT hunk_hash, comment_text FROM hunk_comments WHERE hunk_hash IN ({placeholders})",
+                hunk_hashes,
+            ).fetchall()
+        return {row["hunk_hash"]: row["comment_text"] for row in rows}
+
     def save_reviewed(self, hunk_hash: str, is_reviewed: bool) -> None:
         """レビュー済み状態を保存"""
         now = datetime.now(timezone.utc).isoformat() if is_reviewed else None
@@ -84,3 +96,15 @@ class Storage:
                 (hunk_hash,),
             ).fetchone()
         return bool(row["is_reviewed"]) if row else False
+
+    def get_reviewed_batch(self, hunk_hashes: list[str]) -> dict[str, bool]:
+        """複数の hunk_hash のレビュー済み状態を一括取得する"""
+        if not hunk_hashes:
+            return {}
+        placeholders = ",".join("?" * len(hunk_hashes))
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"SELECT hunk_hash, is_reviewed FROM hunk_status WHERE hunk_hash IN ({placeholders})",
+                hunk_hashes,
+            ).fetchall()
+        return {row["hunk_hash"]: bool(row["is_reviewed"]) for row in rows}

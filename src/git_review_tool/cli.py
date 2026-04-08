@@ -19,6 +19,12 @@ def main() -> None:
     )
     parser.add_argument("commit", help="レビュー対象のコミットハッシュ")
     parser.add_argument(
+        "--base",
+        default=None,
+        metavar="COMMIT",
+        help="比較元コミット（指定時は base..commit の差分を表示）",
+    )
+    parser.add_argument(
         "--repo",
         default=".",
         metavar="PATH",
@@ -60,9 +66,12 @@ def main() -> None:
         db_path = os.path.join(git_dir, "review_tool.sqlite3")
 
     # diff 取得
-    print(f"コミット {args.commit} の差分を取得中...")
+    if args.base:
+        print(f"差分 {args.base}..{args.commit} を取得中...")
+    else:
+        print(f"コミット {args.commit} の差分を取得中...")
     try:
-        diff_text = get_diff(args.commit, repo_path)
+        diff_text = get_diff(args.commit, repo_path, base=args.base)
     except ValueError as exc:
         print(f"エラー: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -79,9 +88,24 @@ def main() -> None:
 
     # ストレージ初期化
     storage = Storage(db_path)
+    base_revision = args.base if args.base else f"{args.commit}^"
+    target_revision = args.commit
+    session_id = storage.get_or_create_session(
+        repository_path=repo_path,
+        base_revision=base_revision,
+        target_revision=target_revision,
+    )
 
     # Flask アプリ起動
-    app = create_app(files, storage, args.commit)
+    commit_label = (
+        f"{args.base}..{args.commit}" if args.base else args.commit
+    )
+    app = create_app(
+        files=files,
+        storage=storage,
+        commit=commit_label,
+        session_id=session_id,
+    )
     print(f"ブラウザで http://{args.host}:{args.port}/ を開いてください。")
     print("終了するには Ctrl+C を押してください。")
     app.run(host=args.host, port=args.port, debug=False)

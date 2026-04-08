@@ -2,15 +2,15 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 
 
-def get_diff(commit: str, repo_path: str = ".") -> str:
-    """指定コミットと親の unified diff を返す。
+def get_diff(target: str, repo_path: str = ".", base: str | None = None) -> str:
+    """unified diff を返す。
 
     Args:
-        commit: コミットハッシュ（または参照）
+        target: ターゲットのコミットハッシュ（または参照）
         repo_path: gitリポジトリのパス
+        base: ベースのコミットハッシュ（指定時は2コミット間差分）
 
     Returns:
         unified diff 文字列
@@ -18,15 +18,33 @@ def get_diff(commit: str, repo_path: str = ".") -> str:
     Raises:
         ValueError: コミットが無効な場合やgit実行エラーの場合
     """
-    cmd = [
-        "git",
-        "-C", repo_path,
-        "show",
-        commit,
-        "--format=",        # コミットメッセージを除く
-        "--diff-algorithm=myers",
-        "--unified=3",
-    ]
+    if base:
+        cmd = [
+            "git",
+            "-C",
+            repo_path,
+            "diff",
+            base,
+            target,
+            "--diff-algorithm=myers",
+            "--unified=3",
+        ]
+        cmd_name = "git diff"
+        ref_label = f"{base}..{target}"
+    else:
+        cmd = [
+            "git",
+            "-C",
+            repo_path,
+            "show",
+            target,
+            "--format=",  # コミットメッセージを除く
+            "--diff-algorithm=myers",
+            "--unified=3",
+        ]
+        cmd_name = "git show"
+        ref_label = target
+
     try:
         result = subprocess.run(
             cmd,
@@ -40,8 +58,6 @@ def get_diff(commit: str, repo_path: str = ".") -> str:
 
     if result.returncode != 0:
         stderr = result.stderr.strip()
-        raise ValueError(
-            f"git show が失敗しました（コミット: {commit}）: {stderr}"
-        )
+        raise ValueError(f"{cmd_name} が失敗しました（対象: {ref_label}）: {stderr}")
 
     return result.stdout

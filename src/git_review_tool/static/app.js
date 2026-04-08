@@ -101,8 +101,10 @@ document.querySelectorAll("input.reviewed-cb").forEach((cb) => {
       if (block) {
         if (isReviewed) {
           block.classList.add("is-reviewed");
+          block.classList.add("is-collapsed");
         } else {
           block.classList.remove("is-reviewed");
+          block.classList.remove("is-collapsed");
         }
       }
     } catch (err) {

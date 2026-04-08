@@ -114,6 +114,25 @@
     .hunk-block.is-reviewed {
       background: #f0fff4;
     }
+    .hunk-collapsed-note {
+      display: none;
+      margin: 8px 0;
+      padding: 8px 10px;
+      border: 1px dashed #9ac9a5;
+      border-radius: 4px;
+      color: #1a7f37;
+      background: #f6fff8;
+      font-size: 0.82rem;
+    }
+    .hunk-body {
+      display: block;
+    }
+    .hunk-block.is-collapsed .hunk-body {
+      display: none;
+    }
+    .hunk-block.is-collapsed .hunk-collapsed-note {
+      display: block;
+    }
     .summary {
       background: #fff;
       border: 1px solid #d0d7de;
@@ -159,7 +178,7 @@
 
       {% for hunk in file.hunks %}
       {% set hh = hunk.hunk_hash %}
-      <div class="hunk-block {% if hunk.is_reviewed %}is-reviewed{% endif %}" id="hunk-{{ hh[:12] }}" data-hunk-hash="{{ hh }}">
+      <div class="hunk-block {% if hunk.is_reviewed %}is-reviewed is-collapsed{% endif %}" id="hunk-{{ hh[:12] }}" data-hunk-hash="{{ hh }}">
         <div class="hunk-meta">
           <span class="hunk-hash" title="{{ hh }}">{{ hh[:12] }}…</span>
           <label class="reviewed-label">
@@ -170,17 +189,21 @@
           </label>
         </div>
 
-        <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.body_lines %}{% if line.startswith('+') %}<span class="line-add">{{ line | e }}</span>{% elif line.startswith('-') %}<span class="line-del">{{ line | e }}</span>{% else %}<span class="line-ctx">{{ line | e }}</span>{% endif %}{% endfor %}</pre>
+        <div class="hunk-collapsed-note">レビュー済み</div>
 
-        <textarea class="comment-box"
-                  data-hunk-hash="{{ hh }}"
-                  data-initial-comment="{{ hunk.saved_comment | e }}"
-                  placeholder="このhunkへのコメントを入力…">{{ hunk.saved_comment }}</textarea>
-        <div class="hunk-actions">
-          <button class="save-btn" data-hunk-hash="{{ hh }}">保存</button>
-          <button class="secondary-btn reset-btn" data-hunk-hash="{{ hh }}">リセット</button>
-          <button class="secondary-btn delete-btn" data-hunk-hash="{{ hh }}">コメント削除</button>
-          <span class="save-status" id="status-{{ hh[:12] }}">✓ 保存しました</span>
+        <div class="hunk-body">
+          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.body_lines %}{% if line.startswith('+') %}<span class="line-add">{{ line | e }}</span>{% elif line.startswith('-') %}<span class="line-del">{{ line | e }}</span>{% else %}<span class="line-ctx">{{ line | e }}</span>{% endif %}{% endfor %}</pre>
+
+          <textarea class="comment-box"
+                    data-hunk-hash="{{ hh }}"
+                    data-initial-comment="{{ hunk.saved_comment | e }}"
+                    placeholder="このhunkへのコメントを入力…">{{ hunk.saved_comment }}</textarea>
+          <div class="hunk-actions">
+            <button class="save-btn" data-hunk-hash="{{ hh }}">保存</button>
+            <button class="secondary-btn reset-btn" data-hunk-hash="{{ hh }}">リセット</button>
+            <button class="secondary-btn delete-btn" data-hunk-hash="{{ hh }}">コメント削除</button>
+            <span class="save-status" id="status-{{ hh[:12] }}">✓ 保存しました</span>
+          </div>
         </div>
       </div>
       {% endfor %}

@@ -39,6 +39,11 @@ class TestStorageComment:
         assert storage.get_comment("hash1") == "comment1"
         assert storage.get_comment("hash2") == "comment2"
 
+    def test_delete_comment(self, storage):
+        storage.save_comment("hash1", "delete me")
+        storage.delete_comment("hash1")
+        assert storage.get_comment("hash1") == ""
+
 
 class TestStorageCommentBatch:
     def test_empty_hashes_returns_empty_dict(self, storage):
@@ -119,3 +124,29 @@ class TestStoragePersistence:
         s2 = Storage(db_path)
         assert s2.get_comment("hash1") == "persistent comment"
         assert s2.get_reviewed("hash1") is True
+
+
+class TestStorageSession:
+    def test_get_or_create_session_returns_same_id(self, storage):
+        s1 = storage.get_or_create_session("/repo", "a1", "b1")
+        s2 = storage.get_or_create_session("/repo", "a1", "b1")
+        assert s1 == s2
+
+    def test_session_scoped_comment(self, storage):
+        s1 = storage.get_or_create_session("/repo", "a1", "b1")
+        s2 = storage.get_or_create_session("/repo", "a2", "b2")
+        storage.save_comment("hash", "comment session1", session_id=s1)
+        storage.save_comment("hash", "comment session2", session_id=s2)
+        assert storage.get_comment("hash", session_id=s1) == "comment session1"
+        assert storage.get_comment("hash", session_id=s2) == "comment session2"
+
+
+class TestStorageCorruptionRecovery:
+    def test_corrupted_db_is_recreated(self, tmp_path):
+        db_path = tmp_path / "broken.sqlite3"
+        db_path.write_text("not a sqlite database", encoding="utf-8")
+
+        storage = Storage(str(db_path))
+        storage.save_comment("hash1", "ok")
+
+        assert storage.get_comment("hash1") == "ok"

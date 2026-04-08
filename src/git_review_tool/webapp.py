@@ -1,7 +1,6 @@
 """Flask Webアプリケーション"""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
@@ -13,6 +12,7 @@ def create_app(
     files: list[dict],
     storage: Storage,
     commit: str,
+    session_id: int = 0,
 ) -> Flask:
     """Flask アプリを生成して返す。
 
@@ -41,15 +41,20 @@ def create_app(
             for f in files
             for hunk in f["hunks"]
         ]
-        comments = storage.get_comments_batch(all_hashes)
-        reviewed_map = storage.get_reviewed_batch(all_hashes)
+        comments = storage.get_comments_batch(all_hashes, session_id=session_id)
+        reviewed_map = storage.get_reviewed_batch(all_hashes, session_id=session_id)
 
         for f in files:
             for hunk in f["hunks"]:
                 h = hunk["hunk_hash"]
                 hunk["saved_comment"] = comments.get(h, "")
                 hunk["is_reviewed"] = reviewed_map.get(h, False)
-        return render_template("review.html", files=files, commit=commit)
+        return render_template(
+            "review.html",
+            files=files,
+            commit=commit,
+            session_id=session_id,
+        )
 
     @app.route("/api/comment", methods=["POST"])
     def api_comment():
@@ -58,7 +63,16 @@ def create_app(
         comment_text = data.get("comment_text", "")
         if not hunk_hash:
             return jsonify({"ok": False, "error": "hunk_hash is required"}), 400
-        storage.save_comment(hunk_hash, comment_text)
+        storage.save_comment(hunk_hash, comment_text, session_id=session_id)
+        return jsonify({"ok": True})
+
+    @app.route("/api/comment", methods=["DELETE"])
+    def api_comment_delete():
+        data = request.get_json(force=True)
+        hunk_hash = data.get("hunk_hash", "").strip()
+        if not hunk_hash:
+            return jsonify({"ok": False, "error": "hunk_hash is required"}), 400
+        storage.delete_comment(hunk_hash, session_id=session_id)
         return jsonify({"ok": True})
 
     @app.route("/api/reviewed", methods=["POST"])
@@ -68,7 +82,7 @@ def create_app(
         is_reviewed = bool(data.get("is_reviewed", False))
         if not hunk_hash:
             return jsonify({"ok": False, "error": "hunk_hash is required"}), 400
-        storage.save_reviewed(hunk_hash, is_reviewed)
+        storage.save_reviewed(hunk_hash, is_reviewed, session_id=session_id)
         return jsonify({"ok": True})
 
     return app

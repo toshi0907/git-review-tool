@@ -28,7 +28,12 @@ def storage(tmp_path):
 
 @pytest.fixture
 def client(storage):
-    app = create_app(SAMPLE_FILES, storage, commit="deadbeef")
+    app = create_app(
+        SAMPLE_FILES,
+        storage,
+        commit="deadbeef",
+        session_id=0,
+    )
     app.config["TESTING"] = True
     with app.test_client() as c:
         yield c
@@ -110,6 +115,25 @@ class TestApiComment:
             content_type="application/json",
         )
         assert storage.get_comment("abc123") == "second"
+
+    def test_delete_comment(self, client, storage):
+        storage.save_comment("abc123", "to be deleted")
+        resp = client.delete(
+            "/api/comment",
+            data=json.dumps({"hunk_hash": "abc123"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["ok"] is True
+        assert storage.get_comment("abc123") == ""
+
+    def test_delete_comment_missing_hash(self, client):
+        resp = client.delete(
+            "/api/comment",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
 
 
 class TestApiReviewed:

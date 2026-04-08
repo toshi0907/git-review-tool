@@ -122,6 +122,25 @@
       margin-bottom: 24px;
       font-size: 0.9rem;
     }
+    button.secondary-btn {
+      padding: 5px 14px;
+      font-size: 0.82rem;
+      background: #f6f8fa;
+      color: #24292f;
+      border: 1px solid #d0d7de;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button.secondary-btn:hover {
+      background: #eef1f4;
+    }
+    button.delete-btn {
+      border-color: #cf222e;
+      color: #cf222e;
+    }
+    button.delete-btn:hover {
+      background: #fff1f0;
+    }
   </style>
 </head>
 <body>
@@ -153,10 +172,14 @@
 
         <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.body_lines %}{% if line.startswith('+') %}<span class="line-add">{{ line | e }}</span>{% elif line.startswith('-') %}<span class="line-del">{{ line | e }}</span>{% else %}<span class="line-ctx">{{ line | e }}</span>{% endif %}{% endfor %}</pre>
 
-        <textarea class="comment-box" data-hunk-hash="{{ hh }}"
+        <textarea class="comment-box"
+                  data-hunk-hash="{{ hh }}"
+                  data-initial-comment="{{ hunk.saved_comment | e }}"
                   placeholder="このhunkへのコメントを入力…">{{ hunk.saved_comment }}</textarea>
         <div class="hunk-actions">
           <button class="save-btn" data-hunk-hash="{{ hh }}">保存</button>
+          <button class="secondary-btn reset-btn" data-hunk-hash="{{ hh }}">リセット</button>
+          <button class="secondary-btn delete-btn" data-hunk-hash="{{ hh }}">コメント削除</button>
           <span class="save-status" id="status-{{ hh[:12] }}">✓ 保存しました</span>
         </div>
       </div>

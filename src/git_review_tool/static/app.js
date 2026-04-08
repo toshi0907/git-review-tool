@@ -12,6 +12,18 @@ async function postJSON(url, body) {
   return res.json();
 }
 
+async function deleteJSON(url, body) {
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 function showStatus(hunkHash) {
   const shortHash = hunkHash.slice(0, 12);
   const el = document.getElementById(`status-${shortHash}`);
@@ -20,20 +32,56 @@ function showStatus(hunkHash) {
   setTimeout(() => { el.style.display = "none"; }, 2000);
 }
 
+function findCommentBox(hunkHash) {
+  return document.querySelector(`textarea[data-hunk-hash="${hunkHash}"]`);
+}
+
 // コメント保存ボタン
 document.querySelectorAll("button.save-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
     const hunkHash = btn.dataset.hunkHash;
-    const textarea = document.querySelector(`textarea[data-hunk-hash="${hunkHash}"]`);
+    const textarea = findCommentBox(hunkHash);
     if (!textarea) return;
     try {
       await postJSON("/api/comment", {
         hunk_hash: hunkHash,
         comment_text: textarea.value,
       });
+      textarea.dataset.initialComment = textarea.value;
       showStatus(hunkHash);
     } catch (err) {
       alert("保存に失敗しました: " + err.message);
+    }
+  });
+});
+
+// コメントリセット
+document.querySelectorAll("button.reset-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const hunkHash = btn.dataset.hunkHash;
+    const textarea = findCommentBox(hunkHash);
+    if (!textarea) return;
+    textarea.value = textarea.dataset.initialComment || "";
+  });
+});
+
+// コメント削除
+document.querySelectorAll("button.delete-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const hunkHash = btn.dataset.hunkHash;
+    const textarea = findCommentBox(hunkHash);
+    if (!textarea) return;
+
+    if (!window.confirm("このhunkのコメントを削除しますか？")) {
+      return;
+    }
+    try {
+      await deleteJSON("/api/comment", { hunk_hash: hunkHash });
+      textarea.value = "";
+      textarea.dataset.initialComment = "";
+      showStatus(hunkHash);
+    } catch (err) {
+      alert("削除に失敗しました: " + err.message);
     }
   });
 });

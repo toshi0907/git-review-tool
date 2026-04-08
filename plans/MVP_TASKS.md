@@ -220,6 +220,15 @@ MVPでは以下の機能を実装します：
 ## 今後の拡張（MVP対象外）
 
 - [ ] 行単位コメント機能（Hunk 単位は実装済みなので拡張）
+  - [x] Step 1: 仕様確定（DB キー設計・スコープ定義）→ `plans/LINE_COMMENT_SPEC.md` 参照
+  - [x] Step 2: Storage CRUD 実装（`save_line_comment` / `get_line_comment` / `delete_line_comment` / `get_line_comments_for_hunk`）
+  - [ ] Step 3: Web API エンドポイント追加（`/api/line_comment`）
+  - [ ] Step 4: テンプレート・フロントエンド UI 実装
+  - [ ] Step 5: 削除行（`-` 行）の UI 上での無効化
+  - [ ] Step 6: 再表示時の行コメント復元
+  - [ ] Step 7: E2E テスト追加
+  - [ ] Step 8: ドキュメント更新
+  - [ ] Step 9: 動作確認・レビュー
 - [ ] HEADと作業ツリーの差分
 - [ ] UI デザイン改善・UX最適化
 - [ ] パフォーマンス最適化（大規模diff対応）

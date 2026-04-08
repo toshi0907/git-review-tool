@@ -150,3 +150,81 @@ class TestStorageCorruptionRecovery:
         storage.save_comment("hash1", "ok")
 
         assert storage.get_comment("hash1") == "ok"
+
+
+class TestStorageLineComment:
+    def test_get_line_comment_returns_empty_if_not_saved(self, storage):
+        assert storage.get_line_comment("hash1", 10) == ""
+
+    def test_save_and_get_line_comment(self, storage):
+        storage.save_line_comment("hash1", 10, "line comment")
+        assert storage.get_line_comment("hash1", 10) == "line comment"
+
+    def test_save_line_comment_overwrite(self, storage):
+        storage.save_line_comment("hash1", 10, "first")
+        storage.save_line_comment("hash1", 10, "second")
+        assert storage.get_line_comment("hash1", 10) == "second"
+
+    def test_save_empty_line_comment(self, storage):
+        storage.save_line_comment("hash1", 10, "something")
+        storage.save_line_comment("hash1", 10, "")
+        assert storage.get_line_comment("hash1", 10) == ""
+
+    def test_save_unicode_line_comment(self, storage):
+        storage.save_line_comment("hash1", 5, "日本語行コメント")
+        assert storage.get_line_comment("hash1", 5) == "日本語行コメント"
+
+    def test_multiple_lines_independent(self, storage):
+        storage.save_line_comment("hash1", 1, "line 1 comment")
+        storage.save_line_comment("hash1", 2, "line 2 comment")
+        assert storage.get_line_comment("hash1", 1) == "line 1 comment"
+        assert storage.get_line_comment("hash1", 2) == "line 2 comment"
+
+    def test_multiple_hunks_independent(self, storage):
+        storage.save_line_comment("hash1", 10, "hunk1 line10")
+        storage.save_line_comment("hash2", 10, "hunk2 line10")
+        assert storage.get_line_comment("hash1", 10) == "hunk1 line10"
+        assert storage.get_line_comment("hash2", 10) == "hunk2 line10"
+
+    def test_delete_line_comment(self, storage):
+        storage.save_line_comment("hash1", 10, "delete me")
+        storage.delete_line_comment("hash1", 10)
+        assert storage.get_line_comment("hash1", 10) == ""
+
+    def test_delete_nonexistent_line_comment_is_noop(self, storage):
+        storage.delete_line_comment("hash1", 99)
+        assert storage.get_line_comment("hash1", 99) == ""
+
+    def test_get_line_comments_for_hunk_empty(self, storage):
+        assert storage.get_line_comments_for_hunk("hash1") == {}
+
+    def test_get_line_comments_for_hunk_returns_all(self, storage):
+        storage.save_line_comment("hash1", 1, "comment a")
+        storage.save_line_comment("hash1", 3, "comment b")
+        result = storage.get_line_comments_for_hunk("hash1")
+        assert result == {1: "comment a", 3: "comment b"}
+
+    def test_get_line_comments_for_hunk_excludes_other_hunks(self, storage):
+        storage.save_line_comment("hash1", 1, "hunk1 comment")
+        storage.save_line_comment("hash2", 1, "hunk2 comment")
+        result = storage.get_line_comments_for_hunk("hash1")
+        assert result == {1: "hunk1 comment"}
+
+    def test_line_comment_session_scoped(self, storage):
+        s1 = storage.get_or_create_session("/repo", "a1", "b1")
+        s2 = storage.get_or_create_session("/repo", "a2", "b2")
+        storage.save_line_comment("hash1", 10, "session1 comment", session_id=s1)
+        storage.save_line_comment("hash1", 10, "session2 comment", session_id=s2)
+        assert storage.get_line_comment("hash1", 10, session_id=s1) == "session1 comment"
+        assert storage.get_line_comment("hash1", 10, session_id=s2) == "session2 comment"
+
+    def test_get_line_comments_for_hunk_session_scoped(self, storage):
+        s1 = storage.get_or_create_session("/repo", "a1", "b1")
+        s2 = storage.get_or_create_session("/repo", "a2", "b2")
+        storage.save_line_comment("hash1", 1, "s1 line1", session_id=s1)
+        storage.save_line_comment("hash1", 2, "s1 line2", session_id=s1)
+        storage.save_line_comment("hash1", 1, "s2 line1", session_id=s2)
+        result_s1 = storage.get_line_comments_for_hunk("hash1", session_id=s1)
+        result_s2 = storage.get_line_comments_for_hunk("hash1", session_id=s2)
+        assert result_s1 == {1: "s1 line1", 2: "s1 line2"}
+        assert result_s2 == {1: "s2 line1"}

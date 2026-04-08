@@ -5,7 +5,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-CURRENT_SCHEMA_VERSION = "2"
+CURRENT_SCHEMA_VERSION = "3"
 
 
 class Storage:
@@ -59,6 +59,16 @@ class Storage:
                 is_reviewed  INTEGER NOT NULL DEFAULT 0,
                 reviewed_at  TEXT,
                 PRIMARY KEY (session_id, hunk_hash)
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS line_comments (
+                session_id   INTEGER NOT NULL DEFAULT 0,
+                hunk_hash    TEXT NOT NULL,
+                new_line_num INTEGER NOT NULL,
+                comment_text TEXT NOT NULL DEFAULT '',
+                updated_at   TEXT NOT NULL,
+                PRIMARY KEY (session_id, hunk_hash, new_line_num)
             )
         """)
         conn.execute(
@@ -236,3 +246,79 @@ class Storage:
                 params,
             ).fetchall()
         return {row["hunk_hash"]: bool(row["is_reviewed"]) for row in rows}
+
+    def save_line_comment(
+        self,
+        hunk_hash: str,
+        new_line_num: int,
+        comment_text: str,
+        session_id: int = 0,
+    ) -> None:
+        """行コメントを保存（既存は上書き）。
+
+        削除行（target 側に行番号がない行）はコメント対象外のため、
+        呼び出し元で new_line_num が有効な追加行または変更なし行であることを確認すること。
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO line_comments (session_id, hunk_hash, new_line_num, comment_text, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(session_id, hunk_hash, new_line_num) DO UPDATE SET
+                    comment_text = excluded.comment_text,
+                    updated_at = excluded.updated_at
+                """,
+                (session_id, hunk_hash, new_line_num, comment_text, now),
+            )
+            conn.commit()
+
+    def get_line_comment(
+        self,
+        hunk_hash: str,
+        new_line_num: int,
+        session_id: int = 0,
+    ) -> str:
+        """行コメントを取得。未保存なら空文字を返す。"""
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT comment_text FROM line_comments
+                WHERE session_id = ? AND hunk_hash = ? AND new_line_num = ?
+                """,
+                (session_id, hunk_hash, new_line_num),
+            ).fetchone()
+        return row["comment_text"] if row else ""
+
+    def get_line_comments_for_hunk(
+        self,
+        hunk_hash: str,
+        session_id: int = 0,
+    ) -> dict[int, str]:
+        """hunk 内の全行コメントを {new_line_num: comment_text} で返す。"""
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT new_line_num, comment_text FROM line_comments
+                WHERE session_id = ? AND hunk_hash = ?
+                """,
+                (session_id, hunk_hash),
+            ).fetchall()
+        return {row["new_line_num"]: row["comment_text"] for row in rows}
+
+    def delete_line_comment(
+        self,
+        hunk_hash: str,
+        new_line_num: int,
+        session_id: int = 0,
+    ) -> None:
+        """特定行のコメントを削除する。"""
+        with self._connect() as conn:
+            conn.execute(
+                """
+                DELETE FROM line_comments
+                WHERE session_id = ? AND hunk_hash = ? AND new_line_num = ?
+                """,
+                (session_id, hunk_hash, new_line_num),
+            )
+            conn.commit()

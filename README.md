@@ -26,6 +26,9 @@ pip install -e .
 # カレントディレクトリのリポジトリで指定コミットをレビュー
 git-review-tool <commit-hash>
 
+# 2コミット間差分をレビュー
+git-review-tool <target-commit> --base <base-commit>
+
 # リポジトリパスを指定
 git-review-tool <commit-hash> --repo /path/to/repo
 
@@ -39,6 +42,7 @@ git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --ho
 
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
+| `--base COMMIT` | なし | 指定時は `base..commit` の2コミット間差分を表示 |
 | `--repo PATH` | `.`（カレントディレクトリ） | gitリポジトリのパス |
 | `--db PATH` | `.git/review_tool.sqlite3` | SQLiteデータベースのパス |
 | `--host HOST` | `127.0.0.1` | Flaskサーバのホスト |
@@ -46,11 +50,16 @@ git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --ho
 
 ## 機能
 
+- 単一コミット差分（`git show`）と2コミット間差分（`git diff`）を表示
 - コミットの unified diff を hunk 単位に分解して表示
 - hunk ごとにコメントを入力・保存
+- hunk コメントの削除
+- hunk コメントのリセット（未保存変更を破棄）
 - hunk ごとに「レビュー済み」チェックボックスで状態管理
 - コメント・レビュー状態は SQLite に永続化（サーバ再起動後も復元）
+- レビューセッション（repository/base/target）単位で状態を分離
 - hunk hash（SHA256）による決定論的な hunk 識別
+- DB破損時は自動でDBを再生成して復旧
 
 ## テスト
 
@@ -58,9 +67,29 @@ git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --ho
 # 開発用依存（pytest）をインストール
 pip install -e ".[dev]"
 
+# フォーマット
+python -m black src tests
+
 # テスト実行
 python -m pytest
 ```
+
+## ストレージ方針
+
+- マイグレーションは実施しません。
+- 常に最新バージョンのスキーマを使用します。
+- 旧バージョンまたは破損したDBを検出した場合は、既存データを廃棄して最新スキーマで再生成します。
+
+## トラブルシューティング
+
+- 症状: `git ... が失敗しました` が表示される
+    - 対応: コミット参照が正しいか、対象がgitリポジトリかを確認してください。
+
+- 症状: 差分が表示されない
+    - 対応: 指定コミットに差分があるか確認してください。`--base` 指定時は `base` と `commit` の順序も確認してください。
+
+- 症状: コメントや状態が消えた
+    - 対応: 旧/破損DB検出時は再生成される仕様です。必要であれば `.git/review_tool.sqlite3` をバックアップして運用してください。
 
 ## ファイル構成
 

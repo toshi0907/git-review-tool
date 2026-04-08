@@ -17,6 +17,7 @@ git-review-tool = "git_review_tool.cli:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
+    "black>=24.0",
 ]
 
 [tool.pytest.ini_options]
@@ -24,3 +25,7 @@ testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]

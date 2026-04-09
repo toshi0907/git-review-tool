@@ -34,6 +34,12 @@ git-review-tool <commit-hash> --repo /path/to/repo
 
 # DBパス・ホスト・ポートを指定
 git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --host 0.0.0.0 --port 8080
+
+# EUC-JPエンコードのソースコードを含むリポジトリをレビュー（自動検出）
+git-review-tool <commit-hash>
+
+# エンコーディングを明示的に指定
+git-review-tool <commit-hash> --encoding euc-jp
 ```
 
 起動後、ブラウザで `http://127.0.0.1:5000/` を開いてください。
@@ -45,6 +51,7 @@ git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --ho
 | `--base COMMIT` | なし | 指定時は `base..commit` の2コミット間差分を表示 |
 | `--repo PATH` | `.`（カレントディレクトリ） | gitリポジトリのパス |
 | `--db PATH` | `.git/review_tool.sqlite3` | SQLiteデータベースのパス |
+| `--encoding ENCODING` | なし（自動検出） | 差分のエンコーディングを明示指定（例: `euc-jp`, `shift_jis`, `utf-8`）。省略時はUTF-8→EUC-JP→CP932の順で自動検出 |
 | `--host HOST` | `127.0.0.1` | Flaskサーバのホスト |
 | `--port PORT` | `5000` | Flaskサーバのポート |
 
@@ -52,6 +59,7 @@ git-review-tool <commit-hash> --repo /path/to/repo --db /tmp/review.sqlite3 --ho
 
 - 単一コミット差分（`git show`）と2コミット間差分（`git diff`）を表示
 - コミットの unified diff を hunk 単位に分解して表示
+- **非UTF-8エンコーディング対応**: UTF-8 / EUC-JP / CP932（Shift_JIS互換）を自動検出。`--encoding` オプションで明示指定も可能
 - hunk ごとにコメントを入力・保存
 - hunk コメントの削除
 - hunk コメントのリセット（未保存変更を破棄）
@@ -85,6 +93,9 @@ python -m pytest
 - 症状: `git ... が失敗しました` が表示される
     - 対応: コミット参照が正しいか、対象がgitリポジトリかを確認してください。
 
+- 症状: 差分が文字化けする
+    - 対応: `--encoding euc-jp` や `--encoding shift_jis` のようにエンコーディングを明示的に指定してください。
+
 - 症状: 差分が表示されない
     - 対応: 指定コミットに差分があるか確認してください。`--base` 指定時は `base` と `commit` の順序も確認してください。
 
@@ -95,14 +106,15 @@ python -m pytest
 
 ```
 src/git_review_tool/
-├── cli.py          # CLIエントリーポイント
-├── git_ops.py      # git コマンド実行
-├── diff_parser.py  # unified diff パーサー
-├── hunk_id.py      # hunk hash 生成
-├── storage.py      # SQLiteストレージ
-├── webapp.py       # Flask Webアプリ
+├── cli.py              # CLIエントリーポイント
+├── git_ops.py          # git コマンド実行
+├── encoding_utils.py   # エンコーディング自動検出・デコード
+├── diff_parser.py      # unified diff パーサー
+├── hunk_id.py          # hunk hash 生成
+├── storage.py          # SQLiteストレージ
+├── webapp.py           # Flask Webアプリ
 ├── templates/
-│   └── review.html # レビューUI
+│   └── review.html     # レビューUI
 └── static/
-    └── app.js      # フロントエンドJS
+    └── app.js          # フロントエンドJS
 ```

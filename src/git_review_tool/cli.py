@@ -37,6 +37,12 @@ def main() -> None:
         help="SQLiteデータベースのパス（デフォルト: <repo>/.git/review_tool.sqlite3）",
     )
     parser.add_argument(
+        "--encoding",
+        default=None,
+        metavar="ENCODING",
+        help="差分のエンコーディングを明示的に指定（例: euc-jp, shift_jis）。省略時は自動検出",
+    )
+    parser.add_argument(
         "--host",
         default="127.0.0.1",
         help="Flaskサーバのホスト（デフォルト: 127.0.0.1）",
@@ -71,7 +77,7 @@ def main() -> None:
     else:
         print(f"コミット {args.commit} の差分を取得中...")
     try:
-        diff_text = get_diff(args.commit, repo_path, base=args.base)
+        diff_text = get_diff(args.commit, repo_path, base=args.base, encoding=args.encoding)
     except ValueError as exc:
         print(f"エラー: {exc}", file=sys.stderr)
         sys.exit(1)

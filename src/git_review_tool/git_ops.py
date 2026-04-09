@@ -3,14 +3,22 @@ from __future__ import annotations
 
 import subprocess
 
+from .encoding_utils import detect_and_decode
 
-def get_diff(target: str, repo_path: str = ".", base: str | None = None) -> str:
+
+def get_diff(
+    target: str,
+    repo_path: str = ".",
+    base: str | None = None,
+    encoding: str | None = None,
+) -> str:
     """unified diff を返す。
 
     Args:
         target: ターゲットのコミットハッシュ（または参照）
         repo_path: gitリポジトリのパス
         base: ベースのコミットハッシュ（指定時は2コミット間差分）
+        encoding: 差分のエンコーディング（指定時は自動検出をスキップ）
 
     Returns:
         unified diff 文字列
@@ -49,15 +57,15 @@ def get_diff(target: str, repo_path: str = ".", base: str | None = None) -> str:
         result = subprocess.run(
             cmd,
             capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
+            text=False,
         )
     except FileNotFoundError:
         raise ValueError("git コマンドが見つかりません。gitをインストールしてください。")
 
     if result.returncode != 0:
-        stderr = result.stderr.strip()
+        stderr = result.stderr.decode("utf-8", errors="replace").strip()
         raise ValueError(f"{cmd_name} が失敗しました（対象: {ref_label}）: {stderr}")
 
-    return result.stdout
+    if encoding:
+        return result.stdout.decode(encoding)
+    return detect_and_decode(result.stdout)

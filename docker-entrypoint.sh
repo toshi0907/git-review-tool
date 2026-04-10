@@ -1,24 +1,24 @@
 #!/bin/sh
 set -e
 
-if [ -z "$COMMIT" ]; then
-    echo "エラー: COMMIT 環境変数が設定されていません。" >&2
-    echo "使い方: COMMIT=<hash> docker compose up" >&2
+if [ -z "$GIT_REVIEW_TOOL_COMMIT" ]; then
+    echo "エラー: GIT_REVIEW_TOOL_COMMIT 環境変数が設定されていません。" >&2
+    echo "使い方: GIT_REVIEW_TOOL_COMMIT=<hash> docker compose up" >&2
     echo "" >&2
     echo "例:" >&2
-    echo "  COMMIT=abc1234 docker compose up" >&2
-    echo "  COMMIT=abc1234 BASE=def5678 docker compose up" >&2
+    echo "  GIT_REVIEW_TOOL_COMMIT=abc1234 docker compose up" >&2
+    echo "  GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker compose up" >&2
     exit 1
 fi
 
-set -- "$COMMIT" --repo /repo --db /data/review_tool.sqlite3 --host 0.0.0.0 --port 5000
+set -- "$GIT_REVIEW_TOOL_COMMIT" --repo /repo --db /data/review_tool.sqlite3 --host 0.0.0.0 --port 5000
 
-if [ -n "$BASE" ]; then
-    set -- "$@" --base "$BASE"
+if [ -n "$GIT_REVIEW_TOOL_BASE" ]; then
+    set -- "$@" --base "$GIT_REVIEW_TOOL_BASE"
 fi
 
-if [ -n "$ENCODING" ]; then
-    set -- "$@" --encoding "$ENCODING"
+if [ -n "$GIT_REVIEW_TOOL_ENCODING" ]; then
+    set -- "$@" --encoding "$GIT_REVIEW_TOOL_ENCODING"
 fi
 
 exec git-review-tool "$@"

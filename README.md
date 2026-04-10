@@ -77,27 +77,27 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 ### 手順
 
-1. `.env.example` をコピーして `.env` を作成し、`COMMIT` にレビュー対象のコミットハッシュを設定します。
+1. `.env.example` をコピーして `.env` を作成し、`GIT_REVIEW_TOOL_COMMIT` にレビュー対象のコミットハッシュを設定します。
 
     ```bash
     cp .env.example .env
-    # .env を編集して COMMIT=<hash> を設定
+    # .env を編集して GIT_REVIEW_TOOL_COMMIT=<hash> を設定
     ```
 
 2. レビュー対象リポジトリのパスを指定してコンテナを起動します。
 
     ```bash
-    # カレントディレクトリのリポジトリをレビュー（.env に COMMIT が設定済みの場合）
+    # カレントディレクトリのリポジトリをレビュー（.env に GIT_REVIEW_TOOL_COMMIT が設定済みの場合）
     docker compose up
 
     # コマンドラインで環境変数を渡す場合（.env より優先されます）
-    COMMIT=abc1234 docker compose up
+    GIT_REVIEW_TOOL_COMMIT=abc1234 docker compose up
 
     # 別リポジトリを指定する場合
-    COMMIT=abc1234 REPO_PATH=/path/to/repo docker compose up
+    GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo docker compose up
 
     # 2コミット間差分をレビューする場合
-    COMMIT=abc1234 BASE=def5678 docker compose up
+    GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker compose up
     ```
 
 3. ブラウザで `http://localhost:5000/` を開いてください。
@@ -112,15 +112,15 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 | 変数 | デフォルト | 説明 |
 |------|-----------|------|
-| `COMMIT` | **必須** | レビュー対象のコミットハッシュ |
-| `BASE` | なし | 比較元コミット（指定時は `BASE..COMMIT` の差分） |
-| `REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
-| `PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
-| `ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
+| `GIT_REVIEW_TOOL_COMMIT` | **必須** | レビュー対象のコミットハッシュ |
+| `GIT_REVIEW_TOOL_BASE` | なし | 比較元コミット（指定時は `BASE..COMMIT` の差分） |
+| `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
+| `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
+| `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
 
 > **注意**: コンテナ内の SQLite データベースは `review-data` という名前付きボリュームに保存されます。  
 > `docker compose down -v` を実行するとボリューム（レビューデータ）も削除されます。  
-> `REPO_PATH` で指定したリポジトリは読み取り専用でマウントされます（`git show` / `git diff` はリポジトリへの書き込みを行わないため問題ありません）。
+> `GIT_REVIEW_TOOL_REPO_PATH` で指定したリポジトリは読み取り専用でマウントされます（`git show` / `git diff` はリポジトリへの書き込みを行わないため問題ありません）。
 
 ## テスト
 

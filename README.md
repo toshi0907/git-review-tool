@@ -74,6 +74,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 ### 前提
 
 - Docker / Docker Compose がインストールされていること
+  - Docker Compose v2（`docker compose`）または v1（`docker-compose`）のどちらでも使用できます
 
 ### 手順
 
@@ -88,16 +89,20 @@ git-review-tool <commit-hash> --encoding euc-jp
 
     ```bash
     # カレントディレクトリのリポジトリをレビュー（.env に GIT_REVIEW_TOOL_COMMIT が設定済みの場合）
-    docker compose up
+    docker compose up          # Docker Compose v2
+    docker-compose up          # Docker Compose v1
 
     # コマンドラインで環境変数を渡す場合（.env より優先されます）
     GIT_REVIEW_TOOL_COMMIT=abc1234 docker compose up
+    GIT_REVIEW_TOOL_COMMIT=abc1234 docker-compose up   # v1
 
     # 別リポジトリを指定する場合
     GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo docker compose up
+    GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo docker-compose up   # v1
 
     # 2コミット間差分をレビューする場合
     GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker compose up
+    GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker-compose up   # v1
     ```
 
 3. ブラウザで `http://localhost:5000/` を開いてください。
@@ -105,7 +110,8 @@ git-review-tool <commit-hash> --encoding euc-jp
 4. 終了するには `Ctrl+C` を押し、コンテナを削除します。
 
     ```bash
-    docker compose down
+    docker compose down          # Docker Compose v2
+    docker-compose down          # Docker Compose v1
     ```
 
 ### 環境変数
@@ -119,7 +125,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
 
 > **注意**: コンテナ内の SQLite データベースは `review-data` という名前付きボリュームに保存されます。  
-> `docker compose down -v` を実行するとボリューム（レビューデータ）も削除されます。  
+> `docker compose down -v`（v2）または `docker-compose down -v`（v1）を実行するとボリューム（レビューデータ）も削除されます。  
 > `GIT_REVIEW_TOOL_REPO_PATH` で指定したリポジトリは読み取り専用でマウントされます（`git show` / `git diff` はリポジトリへの書き込みを行わないため問題ありません）。
 
 ## テスト

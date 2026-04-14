@@ -9,6 +9,7 @@ description = "ローカルFlaskサーバでgitコミットをレビューする
 requires-python = ">=3.8"
 dependencies = [
     "flask>=3.0",
+    "pygments>=2.0",
 ]
 
 [project.scripts]

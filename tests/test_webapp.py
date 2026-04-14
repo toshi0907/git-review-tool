@@ -58,7 +58,8 @@ class TestIndexRoute:
 
     def test_contains_diff_lines(self, client):
         resp = client.get("/")
-        assert b"line2 modified" in resp.data
+        # シンタックスハイライト後もトークン文字列自体は含まれる
+        assert b"line2" in resp.data
 
     def test_shows_saved_comment(self, client, storage):
         storage.save_comment("abc123", "existing comment")

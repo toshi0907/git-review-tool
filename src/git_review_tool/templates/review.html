@@ -160,6 +160,8 @@
     button.delete-btn:hover {
       background: #fff1f0;
     }
+    /* Pygments シンタックスハイライト（diff 内に適用） */
+    {{ pygments_css | safe }}
   </style>
 </head>
 <body>
@@ -192,7 +194,7 @@
         <div class="hunk-collapsed-note">レビュー済み</div>
 
         <div class="hunk-body">
-          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.body_lines %}{% if line.startswith('+') %}<span class="line-add">{{ line | e }}</span>{% elif line.startswith('-') %}<span class="line-del">{{ line | e }}</span>{% else %}<span class="line-ctx">{{ line | e }}</span>{% endif %}{% endfor %}</pre>
+          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.highlighted_lines %}<span class="line-{{ line.type }}">{{ line.prefix }}{{ line.html | safe }}</span>{% endfor %}</pre>
 
           <textarea class="comment-box"
                     data-hunk-hash="{{ hh }}"

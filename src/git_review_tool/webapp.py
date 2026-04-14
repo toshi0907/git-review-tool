@@ -6,6 +6,7 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template, request
 
 from .storage import Storage
+from .syntax import get_pygments_css, highlight_diff_lines
 
 
 def create_app(
@@ -33,6 +34,14 @@ def create_app(
         static_folder=str(static_dir),
     )
 
+    # シンタックスハイライトをアプリ起動時に一度だけ適用
+    pygments_css = get_pygments_css()
+    for f in files:
+        for hunk in f["hunks"]:
+            hunk["highlighted_lines"] = highlight_diff_lines(
+                hunk["body_lines"], f["file_path"]
+            )
+
     @app.route("/")
     def index():
         # 全 hunk_hash を収集してバッチ取得
@@ -54,6 +63,7 @@ def create_app(
             files=files,
             commit=commit,
             session_id=session_id,
+            pygments_css=pygments_css,
         )
 
     @app.route("/api/comment", methods=["POST"])

@@ -99,7 +99,10 @@ def highlight_diff_lines(
     # 行単位に分割（スパンの整合性を維持しながら）
     hl_lines = _split_highlighted_lines(highlighted_html)
 
-    # Pygments が末尾に余分な空行を追加する場合があるため長さを合わせる
+    # 行数が足りない場合は空文字で埋める。
+    # Pygments が行数を増やす場合（末尾に余分な行を追加するなど）は、
+    # enumerate(body_lines) のループが自然に body_lines の範囲で止まるため
+    # 余分な行は無視される。
     while len(hl_lines) < len(body_lines):
         hl_lines.append("")
 

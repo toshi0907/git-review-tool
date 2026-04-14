@@ -21,7 +21,7 @@ class TestGetDiff:
         out = get_diff("deadbeef", repo_path="/repo")
 
         assert out == "diff"
-        assert captured["cmd"][:4] == ["git", "-C", "/repo", "show"]
+        assert captured["cmd"][:6] == ["git", "-C", "/repo", "-c", "safe.directory=/repo", "show"]
         assert "deadbeef" in captured["cmd"]
 
     def test_two_commit_mode_uses_git_diff(self, monkeypatch):
@@ -36,7 +36,7 @@ class TestGetDiff:
         out = get_diff("target", repo_path="/repo", base="base")
 
         assert out == "diff"
-        assert captured["cmd"][:4] == ["git", "-C", "/repo", "diff"]
+        assert captured["cmd"][:6] == ["git", "-C", "/repo", "-c", "safe.directory=/repo", "diff"]
         assert "base" in captured["cmd"]
         assert "target" in captured["cmd"]
 

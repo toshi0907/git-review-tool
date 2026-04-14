@@ -31,6 +31,8 @@ def get_diff(
             "git",
             "-C",
             repo_path,
+            "-c",
+            f"safe.directory={repo_path}",
             "diff",
             base,
             target,
@@ -44,6 +46,8 @@ def get_diff(
             "git",
             "-C",
             repo_path,
+            "-c",
+            f"safe.directory={repo_path}",
             "show",
             target,
             "--format=",  # コミットメッセージを除く

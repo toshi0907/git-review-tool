@@ -11,8 +11,8 @@ services:
       - review-data:/data
     environment:
       - GIT_REVIEW_TOOL_COMMIT=${GIT_REVIEW_TOOL_COMMIT}
-      - GIT_REVIEW_TOOL_BASE=${GIT_REVIEW_TOOL_BASE:-}
-      - GIT_REVIEW_TOOL_ENCODING=${GIT_REVIEW_TOOL_ENCODING:-}
+      - GIT_REVIEW_TOOL_BASE
+      - GIT_REVIEW_TOOL_ENCODING
 
 volumes:
   review-data:

@@ -123,6 +123,6 @@ class TestHighlightDiffLines:
         # Pygments は HTML 特殊文字をエスケープするはず
         lines = ['+ x < y && y > 0;']
         result = highlight_diff_lines(lines, "foo.c")
-        # 生の < > が HTML として安全にエンコードされているか、
-        # または span でラップされていることを確認
-        assert "<script" not in result[0]["html"].lower()
+        # < および > が &lt; / &gt; としてエスケープされていることを確認
+        assert "&lt;" in result[0]["html"] or "<" not in result[0]["html"].replace("<span", "").replace("</span>", "")
+        assert "&gt;" in result[0]["html"] or ">" not in result[0]["html"].replace("</span>", "")

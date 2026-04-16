@@ -149,7 +149,7 @@ def test_e2e_comment_and_status_survive_rewritten_commit_hash(tmp_path):
         )
         assert save_reviewed_resp.status_code == 200
 
-    _run(["git", "reset", "--hard", base], str(repo))
+    _run(["git", "checkout", "-b", "rewritten", base], str(repo))
     target_file = repo / "sample.py"
     target_file.write_text("line1\nline2 changed\nline3\n", encoding="utf-8")
     _run(["git", "add", "sample.py"], str(repo))

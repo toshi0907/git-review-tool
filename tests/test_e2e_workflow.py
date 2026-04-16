@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-import uuid
 
 from git_review_tool.diff_parser import parse_diff
 from git_review_tool.git_ops import get_diff
@@ -150,16 +149,18 @@ def test_e2e_comment_and_status_survive_rewritten_commit_hash(tmp_path):
         )
         assert save_reviewed_resp.status_code == 200
 
-    branch_name = f"rewritten-{uuid.uuid4().hex}"
+    branch_name = f"rewritten-{target[:8]}"
     _run(["git", "checkout", "-b", branch_name, base], str(repo))
     target_file = repo / "sample.py"
     target_file.write_text("line1\nline2 changed\nline3\n", encoding="utf-8")
     _run(["git", "add", "sample.py"], str(repo))
     _run(["git", "commit", "-m", "rewritten update"], str(repo))
-    rewritten_target = _run(["git", "rev-parse", "HEAD"], str(repo))
-    assert rewritten_target != target
+    rewritten_commit_hash = _run(["git", "rev-parse", "HEAD"], str(repo))
+    assert rewritten_commit_hash != target
 
-    app2, storage2, files2, session_id2 = _build_app(str(repo), base, rewritten_target, db_path)
+    app2, storage2, files2, session_id2 = _build_app(
+        str(repo), base, rewritten_commit_hash, db_path
+    )
     rewritten_hunk_hash = files2[0]["hunks"][0]["hunk_hash"]
 
     assert rewritten_hunk_hash == hunk_hash

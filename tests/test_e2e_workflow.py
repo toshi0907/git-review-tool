@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import uuid
 
 from git_review_tool.diff_parser import parse_diff
 from git_review_tool.git_ops import get_diff
@@ -149,7 +150,8 @@ def test_e2e_comment_and_status_survive_rewritten_commit_hash(tmp_path):
         )
         assert save_reviewed_resp.status_code == 200
 
-    _run(["git", "checkout", "-b", "rewritten", base], str(repo))
+    branch_name = f"rewritten-{uuid.uuid4().hex}"
+    _run(["git", "checkout", "-b", branch_name, base], str(repo))
     target_file = repo / "sample.py"
     target_file.write_text("line1\nline2 changed\nline3\n", encoding="utf-8")
     _run(["git", "add", "sample.py"], str(repo))

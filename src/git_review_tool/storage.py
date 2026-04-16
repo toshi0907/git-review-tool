@@ -6,8 +6,8 @@ import sqlite3
 from datetime import datetime, timezone
 
 CURRENT_SCHEMA_VERSION = "2"
-REPOSITORY_SESSION_BASE_SENTINEL = "__repository_review_base__"
-REPOSITORY_SESSION_TARGET_SENTINEL = "__repository_review_target__"
+REPOSITORY_SESSION_KEY_PART1 = "__repository_review_key_part1__"
+REPOSITORY_SESSION_KEY_PART2 = "__repository_review_key_part2__"
 
 
 class Storage:
@@ -138,8 +138,8 @@ class Storage:
         """リポジトリ単位で共通利用するレビューセッションを取得または作成する。"""
         return self.get_or_create_session(
             repository_path=repository_path,
-            base_revision=REPOSITORY_SESSION_BASE_SENTINEL,
-            target_revision=REPOSITORY_SESSION_TARGET_SENTINEL,
+            base_revision=REPOSITORY_SESSION_KEY_PART1,
+            target_revision=REPOSITORY_SESSION_KEY_PART2,
         )
 
     def save_comment(

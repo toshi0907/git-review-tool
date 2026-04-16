@@ -163,6 +163,7 @@ def test_e2e_comment_and_status_survive_rewritten_commit_hash(tmp_path):
     )
     rewritten_hunk_hash = files2[0]["hunks"][0]["hunk_hash"]
 
+    assert files2[0]["hunks"][0]["body_lines"] == files1[0]["hunks"][0]["body_lines"]
     assert rewritten_hunk_hash == hunk_hash
     assert storage2.get_comment(rewritten_hunk_hash, session_id=session_id2) == "keep me"
     assert storage2.get_reviewed(rewritten_hunk_hash, session_id=session_id2) is True

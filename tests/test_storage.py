@@ -140,6 +140,11 @@ class TestStorageSession:
         assert storage.get_comment("hash", session_id=s1) == "comment session1"
         assert storage.get_comment("hash", session_id=s2) == "comment session2"
 
+    def test_repository_session_is_stable_for_same_repo(self, storage):
+        s1 = storage.get_or_create_repository_session("/repo")
+        s2 = storage.get_or_create_repository_session("/repo")
+        assert s1 == s2
+
 
 class TestStorageCorruptionRecovery:
     def test_corrupted_db_is_recreated(self, tmp_path):

@@ -94,13 +94,7 @@ def main() -> None:
 
     # ストレージ初期化
     storage = Storage(db_path)
-    base_revision = args.base if args.base else f"{args.commit}^"
-    target_revision = args.commit
-    session_id = storage.get_or_create_session(
-        repository_path=repo_path,
-        base_revision=base_revision,
-        target_revision=target_revision,
-    )
+    session_id = storage.get_or_create_repository_session(repository_path=repo_path)
 
     # Flask アプリ起動
     commit_label = (

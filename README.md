@@ -65,7 +65,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 - hunk コメントのリセット（未保存変更を破棄）
 - hunk ごとに「レビュー済み」チェックボックスで状態管理
 - コメント・レビュー状態は SQLite に永続化（サーバ再起動後も復元）
-- レビューセッション（repository/base/target）単位で状態を分離
+- コメント・レビュー状態はリポジトリ単位で永続化（コミットハッシュ変更後も同一hunkなら復元）
 - hunk hash（SHA256）による決定論的な hunk 識別
 - DB破損時は自動でDBを再生成して復旧
 

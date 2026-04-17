@@ -6,6 +6,8 @@ import sqlite3
 from datetime import datetime, timezone
 
 CURRENT_SCHEMA_VERSION = "2"
+REPOSITORY_SESSION_BASE_REVISION = "__repository_review_session_base__"
+REPOSITORY_SESSION_TARGET_REVISION = "__repository_review_session_target__"
 
 
 class Storage:
@@ -24,6 +26,14 @@ class Storage:
         os.makedirs(os.path.dirname(self.db_path) or ".", exist_ok=True)
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
+
+    def _normalize_repository_path(self, repository_path: str) -> str:
+        """セッションキーとして使うリポジトリパスを正規化する。
+
+        相対パス表現を絶対パスに揃え、symlink を解決し、
+        末尾スラッシュ等の表記揺れを除去して同一キー化する。
+        """
+        return os.path.normpath(os.path.realpath(os.path.abspath(repository_path)))
 
     def _create_schema(self, conn: sqlite3.Connection) -> None:
         conn.execute("""
@@ -131,6 +141,15 @@ class Storage:
             )
             conn.commit()
             return int(cur.lastrowid)
+
+    def get_or_create_repository_session(self, repository_path: str) -> int:
+        """リポジトリ単位で共通利用するレビューセッションを取得または作成する。"""
+        normalized_repository_path = self._normalize_repository_path(repository_path)
+        return self.get_or_create_session(
+            repository_path=normalized_repository_path,
+            base_revision=REPOSITORY_SESSION_BASE_REVISION,
+            target_revision=REPOSITORY_SESSION_TARGET_REVISION,
+        )
 
     def save_comment(
         self,

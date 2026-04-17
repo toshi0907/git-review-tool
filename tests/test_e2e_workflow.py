@@ -46,7 +46,7 @@ def _build_app(repo: str, base: str, target: str, db_path: str):
             h["hunk_hash"] = compute_hunk_hash(f["file_path"], h["body_lines"])
 
     storage = Storage(db_path)
-    session_id = storage.get_or_create_session(repo, base, target)
+    session_id = storage.get_or_create_repository_session(repo)
     app = create_app(files, storage, commit=f"{base}..{target}", session_id=session_id)
     app.config["TESTING"] = True
     return app, storage, files, session_id
@@ -126,3 +126,44 @@ def test_e2e_delete_and_rename_diff_can_be_parsed(tmp_path):
     files = parse_diff(diff_text)
 
     assert len(files) >= 1
+
+
+def test_e2e_comment_and_status_survive_rewritten_commit_hash(tmp_path):
+    repo, base, target = _setup_test_repo(tmp_path)
+    db_path = str(tmp_path / "review.sqlite3")
+
+    app1, storage1, files1, _session_id1 = _build_app(str(repo), base, target, db_path)
+    hunk_hash = files1[0]["hunks"][0]["hunk_hash"]
+
+    with app1.test_client() as client:
+        save_comment_resp = client.post(
+            "/api/comment",
+            data=json.dumps({"hunk_hash": hunk_hash, "comment_text": "keep me"}),
+            content_type="application/json",
+        )
+        assert save_comment_resp.status_code == 200
+        save_reviewed_resp = client.post(
+            "/api/reviewed",
+            data=json.dumps({"hunk_hash": hunk_hash, "is_reviewed": True}),
+            content_type="application/json",
+        )
+        assert save_reviewed_resp.status_code == 200
+
+    branch_name = f"rewritten-{target[:8]}"
+    _run(["git", "checkout", "-b", branch_name, base], str(repo))
+    target_file = repo / "sample.py"
+    target_file.write_text("line1\nline2 changed\nline3\n", encoding="utf-8")
+    _run(["git", "add", "sample.py"], str(repo))
+    _run(["git", "commit", "-m", "rewritten update"], str(repo))
+    rewritten_commit_hash = _run(["git", "rev-parse", "HEAD"], str(repo))
+    assert rewritten_commit_hash != target
+
+    app2, storage2, files2, session_id2 = _build_app(
+        str(repo), base, rewritten_commit_hash, db_path
+    )
+    rewritten_hunk_hash = files2[0]["hunks"][0]["hunk_hash"]
+
+    assert files2[0]["hunks"][0]["body_lines"] == files1[0]["hunks"][0]["body_lines"]
+    assert rewritten_hunk_hash == hunk_hash
+    assert storage2.get_comment(rewritten_hunk_hash, session_id=session_id2) == "keep me"
+    assert storage2.get_reviewed(rewritten_hunk_hash, session_id=session_id2) is True

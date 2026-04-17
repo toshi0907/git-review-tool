@@ -145,6 +145,18 @@ class TestStorageSession:
         s2 = storage.get_or_create_repository_session("/repo")
         assert s1 == s2
 
+    def test_repository_session_normalizes_path_representations(self, storage, tmp_path):
+        repo_dir = tmp_path / "repo"
+        repo_dir.mkdir()
+        repo_link = tmp_path / "repo-link"
+        repo_link.symlink_to(repo_dir, target_is_directory=True)
+
+        s1 = storage.get_or_create_repository_session(str(repo_dir))
+        s2 = storage.get_or_create_repository_session(f"{repo_dir}/")
+        s3 = storage.get_or_create_repository_session(str(repo_link))
+
+        assert s1 == s2 == s3
+
 
 class TestStorageCorruptionRecovery:
     def test_corrupted_db_is_recreated(self, tmp_path):

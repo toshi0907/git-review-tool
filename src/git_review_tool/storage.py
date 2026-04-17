@@ -27,6 +27,10 @@ class Storage:
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
 
+    def _normalize_repository_path(self, repository_path: str) -> str:
+        """セッションキーとして使うリポジトリパスを正規化する。"""
+        return os.path.normpath(os.path.realpath(os.path.abspath(repository_path)))
+
     def _create_schema(self, conn: sqlite3.Connection) -> None:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS review_meta (
@@ -136,8 +140,9 @@ class Storage:
 
     def get_or_create_repository_session(self, repository_path: str) -> int:
         """リポジトリ単位で共通利用するレビューセッションを取得または作成する。"""
+        normalized_repository_path = self._normalize_repository_path(repository_path)
         return self.get_or_create_session(
-            repository_path=repository_path,
+            repository_path=normalized_repository_path,
             base_revision=REPOSITORY_SESSION_KEY_PART1,
             target_revision=REPOSITORY_SESSION_KEY_PART2,
         )

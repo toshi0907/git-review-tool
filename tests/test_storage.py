@@ -145,7 +145,7 @@ class TestStorageSession:
         s2 = storage.get_or_create_repository_session("/repo")
         assert s1 == s2
 
-    def test_repository_session_normalizes_path_representations(self, storage, tmp_path):
+    def test_repository_session_returns_same_id_for_equivalent_paths(self, storage, tmp_path):
         repo_dir = tmp_path / "repo"
         repo_dir.mkdir()
         repo_link = tmp_path / "repo-link"

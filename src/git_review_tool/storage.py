@@ -28,7 +28,11 @@ class Storage:
             os.remove(self.db_path)
 
     def _normalize_repository_path(self, repository_path: str) -> str:
-        """セッションキーとして使うリポジトリパスを正規化する。"""
+        """セッションキーとして使うリポジトリパスを正規化する。
+
+        相対パス表現を絶対パスに揃え、symlink を解決し、
+        末尾スラッシュ等の表記揺れを除去して同一キー化する。
+        """
         return os.path.normpath(os.path.realpath(os.path.abspath(repository_path)))
 
     def _create_schema(self, conn: sqlite3.Connection) -> None:

@@ -66,6 +66,12 @@ class TestIndexRoute:
         resp = client.get("/")
         assert b"existing comment" in resp.data
 
+    def test_reviewed_hunk_is_rendered_collapsed_compact(self, client, storage):
+        storage.save_reviewed("abc123", True)
+        resp = client.get("/")
+        assert b"is-reviewed is-collapsed" in resp.data
+        assert "\u2713 \u30b3\u30f3\u30d1\u30af\u30c8\u8868\u793a".encode("utf-8") in resp.data
+
 
 class TestApiComment:
     def test_save_comment_success(self, client, storage):

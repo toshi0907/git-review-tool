@@ -116,22 +116,36 @@
     }
     .hunk-collapsed-note {
       display: none;
-      margin: 8px 0;
-      padding: 8px 10px;
-      border: 1px dashed #9ac9a5;
-      border-radius: 4px;
+      padding: 1px 8px;
+      border: 1px solid #9ac9a5;
+      border-radius: 999px;
       color: #1a7f37;
-      background: #f6fff8;
-      font-size: 0.82rem;
+      background: #ecfdf3;
+      font-size: 0.74rem;
+      line-height: 1.4;
     }
     .hunk-body {
       display: block;
+    }
+    .hunk-block.is-collapsed {
+      padding: 6px 12px;
+    }
+    .hunk-block.is-collapsed .hunk-meta {
+      margin-bottom: 0;
+      gap: 8px;
+    }
+    .hunk-block.is-collapsed .hunk-hash {
+      font-size: 0.68rem;
+      padding: 1px 5px;
+    }
+    .hunk-block.is-collapsed .reviewed-label {
+      font-size: 0.78rem;
     }
     .hunk-block.is-collapsed .hunk-body {
       display: none;
     }
     .hunk-block.is-collapsed .hunk-collapsed-note {
-      display: block;
+      display: inline-block;
     }
     .summary {
       background: #fff;
@@ -189,9 +203,8 @@
                    {% if hunk.is_reviewed %}checked{% endif %}>
             レビュー済み
           </label>
+          <span class="hunk-collapsed-note">✓ コンパクト表示</span>
         </div>
-
-        <div class="hunk-collapsed-note">レビュー済み</div>
 
         <div class="hunk-body">
           <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.highlighted_lines %}<span class="line-{{ line.type }}">{{ line.prefix }}{{ line.html | safe }}</span>{% endfor %}</pre>

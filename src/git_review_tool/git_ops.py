@@ -146,7 +146,12 @@ def find_target_commit_by_message(
         stderr = result.stderr.strip()
         raise ValueError(f"git log が失敗しました（対象: {base}..{head}）: {stderr}")
 
-    target = next((line.strip() for line in result.stdout.splitlines() if line.strip()), "")
+    target = ""
+    for line in result.stdout.splitlines():
+        candidate = line.strip()
+        if candidate:
+            target = candidate
+            break
     if not target:
         raise ValueError(
             "コミットメッセージに指定キーワードを含むコミットが見つかりませんでした。"

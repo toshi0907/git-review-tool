@@ -2,7 +2,7 @@
 set -e
 
 if [ -z "$GIT_REVIEW_TOOL_COMMIT" ] && [ -z "$GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD" ]; then
-    echo "エラー: GIT_REVIEW_TOOL_COMMIT 環境変数が設定されていません。" >&2
+    echo "エラー: GIT_REVIEW_TOOL_COMMIT または GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD のいずれかを設定してください。" >&2
     echo "使い方: GIT_REVIEW_TOOL_COMMIT=<hash> docker compose up" >&2
     echo "        GIT_REVIEW_TOOL_COMMIT=<hash> docker-compose up  (v1をお使いの場合)" >&2
     echo "" >&2

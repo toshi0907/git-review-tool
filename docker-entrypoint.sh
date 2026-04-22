@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-if [ -z "$GIT_REVIEW_TOOL_COMMIT" ] && [ -z "$GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD" ]; then
-    echo "エラー: GIT_REVIEW_TOOL_COMMIT または GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD のいずれかを設定してください。" >&2
+if [ -z "$GIT_REVIEW_TOOL_COMMIT" ] && { [ -z "$GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD" ] || { [ -z "$GIT_REVIEW_TOOL_BASE_BRANCH" ] && [ -z "$GIT_REVIEW_TOOL_BASE" ]; }; }; then
+    echo "エラー: GIT_REVIEW_TOOL_COMMIT を設定するか、GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD と GIT_REVIEW_TOOL_BASE_BRANCH（または GIT_REVIEW_TOOL_BASE）を設定してください。" >&2
     echo "使い方: GIT_REVIEW_TOOL_COMMIT=<hash> docker compose up" >&2
     echo "        GIT_REVIEW_TOOL_COMMIT=<hash> docker-compose up  (v1をお使いの場合)" >&2
     echo "" >&2

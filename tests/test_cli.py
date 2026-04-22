@@ -1,4 +1,4 @@
-"""cli モジュールのユニットテスト"""
+"""CLIのレビュー対象自動検出（base/キーワード）周りを検証するテスト。"""
 from __future__ import annotations
 
 import pytest

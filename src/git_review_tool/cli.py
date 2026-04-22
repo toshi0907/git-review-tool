@@ -38,7 +38,8 @@ def main() -> None:
         metavar="BRANCH",
         help=(
             "比較元ブランチ名。--base 未指定時、"
-            "このブランチとHEADのmerge-baseをbaseとして使用"
+            "このブランチとHEADのmerge-baseをbaseとして使用。"
+            "自動検出時は --target-message-keyword と組み合わせて使用"
         ),
     )
     parser.add_argument(
@@ -47,7 +48,8 @@ def main() -> None:
         metavar="KEYWORD",
         help=(
             "レビュー対象コミットの自動検出キーワード。"
-            "base..HEAD のコミットメッセージに一致する最新コミットを使用"
+            "base..HEAD のコミットメッセージに一致する最新コミットを使用。"
+            "自動検出時は --base または --base-branch が必要"
         ),
     )
     parser.add_argument(
@@ -116,7 +118,7 @@ def main() -> None:
     if not commit:
         parser.error(
             "commit を指定してください。自動検出する場合は "
-            "--target-message-keyword を指定してください。"
+            "--base または --base-branch と --target-message-keyword を指定してください。"
         )
 
     # DB パスの決定

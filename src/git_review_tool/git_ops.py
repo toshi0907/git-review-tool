@@ -80,7 +80,16 @@ def resolve_merge_base(
     repo_path: str = ".",
     head: str = "HEAD",
 ) -> str:
-    """ベースブランチとHEADのmerge-baseを返す。"""
+    """ベースブランチとHEADの共通祖先コミット（merge-base）を返す。
+
+    Args:
+        base_branch: merge-base計算の基準にするブランチ名（例: main, origin/dev）
+        repo_path: 対象gitリポジトリのパス
+        head: 比較先の参照（通常はHEAD）
+
+    Returns:
+        base_branch と head の merge-base コミットハッシュ
+    """
     cmd = [
         "git",
         "-C",
@@ -120,7 +129,17 @@ def find_target_commit_by_message(
     repo_path: str = ".",
     head: str = "HEAD",
 ) -> str:
-    """base..head のコミットからキーワードに一致する最新コミットを返す。"""
+    """base..head のコミットメッセージからキーワード一致の最新コミットを返す。
+
+    Args:
+        base: 検索範囲の開始コミット（除外）
+        keyword: コミットメッセージに含まれるべき文字列（固定文字列検索）
+        repo_path: 対象gitリポジトリのパス
+        head: 検索範囲の終了参照（通常はHEAD、含む）
+
+    Returns:
+        git log の出力順（新しい順）で最初に一致したコミットハッシュ
+    """
     cmd = [
         "git",
         "-C",

@@ -20,7 +20,11 @@ def main() -> None:
     parser.add_argument(
         "commit",
         nargs="?",
-        help="レビュー対象のコミットハッシュ（省略時は --target-message-keyword で自動検出）",
+        help=(
+            "レビュー対象のコミットハッシュ"
+            "（省略時は --base または --base-branch と "
+            "--target-message-keyword で自動検出）"
+        ),
     )
     parser.add_argument(
         "--base",

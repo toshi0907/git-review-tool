@@ -26,6 +26,9 @@ pip install -e .
 # カレントディレクトリのリポジトリで指定コミットをレビュー
 git-review-tool <commit-hash>
 
+# BASEブランチとキーワードからレビュー対象を自動検出
+git-review-tool --base-branch main --target-message-keyword "[review]"
+
 # 2コミット間差分をレビュー
 git-review-tool <target-commit> --base <base-commit>
 
@@ -49,6 +52,8 @@ git-review-tool <commit-hash> --encoding euc-jp
 | オプション | デフォルト | 説明 |
 |-----------|-----------|------|
 | `--base COMMIT` | なし | 指定時は `base..commit` の2コミット間差分を表示 |
+| `--base-branch BRANCH` | なし | `--base` 未指定時、`BRANCH` と `HEAD` の merge-base を自動で比較元に設定 |
+| `--target-message-keyword KEYWORD` | なし | `base..HEAD` のコミットメッセージに `KEYWORD` を含む最新コミットをレビュー対象として自動検出 |
 | `--repo PATH` | `.`（カレントディレクトリ） | gitリポジトリのパス |
 | `--db PATH` | `.git/review_tool.sqlite3` | SQLiteデータベースのパス |
 | `--encoding ENCODING` | なし（自動検出） | 差分のエンコーディングを明示指定（例: `euc-jp`, `shift_jis`, `utf-8`）。省略時はUTF-8→EUC-JP→CP932の順で自動検出 |
@@ -78,7 +83,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 ### 手順
 
-1. `.env.example` をコピーして `.env` を作成し、`GIT_REVIEW_TOOL_COMMIT` にレビュー対象のコミットハッシュを設定します。
+1. `.env.example` をコピーして `.env` を作成し、`GIT_REVIEW_TOOL_COMMIT`（手動指定）または `GIT_REVIEW_TOOL_AUTO_BASE_BRANCH` + `GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD`（自動検出）を設定します。
 
     ```bash
     cp .env.example .env
@@ -103,6 +108,10 @@ git-review-tool <commit-hash> --encoding euc-jp
     # 2コミット間差分をレビューする場合
     GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker compose up
     GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker-compose up   # v1
+
+    # BASEブランチとキーワードでレビュー対象コミットを自動検出する場合
+    GIT_REVIEW_TOOL_AUTO_BASE_BRANCH=main GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD='[review]' docker compose up
+    GIT_REVIEW_TOOL_AUTO_BASE_BRANCH=main GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD='[review]' docker-compose up   # v1
     ```
 
 3. ブラウザで `http://localhost:5000/` を開いてください。
@@ -118,8 +127,10 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 | 変数 | デフォルト | 説明 |
 |------|-----------|------|
-| `GIT_REVIEW_TOOL_COMMIT` | **必須** | レビュー対象のコミットハッシュ |
+| `GIT_REVIEW_TOOL_COMMIT` | なし | レビュー対象のコミットハッシュ（手動指定時） |
 | `GIT_REVIEW_TOOL_BASE` | なし | 比較元コミット（指定時は `BASE..COMMIT` の差分） |
+| `GIT_REVIEW_TOOL_AUTO_BASE_BRANCH` | なし | `BASE` 未指定時、`HEAD` との merge-base 算出に使うブランチ名（例: `main`, `origin/dev`） |
+| `GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD` | なし | `BASE..HEAD` のコミットメッセージにこの文字列を含む最新コミットをレビュー対象として自動検出 |
 | `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
 | `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |

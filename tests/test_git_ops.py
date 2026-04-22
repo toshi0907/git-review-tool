@@ -5,7 +5,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from git_review_tool.git_ops import get_diff
+from git_review_tool.git_ops import (
+    find_target_commit_by_message,
+    get_diff,
+    resolve_merge_base,
+)
 
 
 class TestGetDiff:
@@ -92,3 +96,81 @@ class TestGetDiff:
         out = get_diff("deadbeef", repo_path="/repo")
 
         assert out == utf8_text
+
+
+class TestResolveMergeBase:
+    def test_uses_git_merge_base(self, monkeypatch):
+        captured: dict[str, object] = {}
+
+        def fake_run(cmd, **kwargs):
+            captured["cmd"] = cmd
+            return SimpleNamespace(returncode=0, stdout="abc123\n", stderr="")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+
+        out = resolve_merge_base("main", repo_path="/repo")
+
+        assert out == "abc123"
+        assert captured["cmd"] == [
+            "git",
+            "-C",
+            "/repo",
+            "-c",
+            "safe.directory=/repo",
+            "merge-base",
+            "main",
+            "HEAD",
+        ]
+
+    def test_raises_when_git_merge_base_fails(self, monkeypatch):
+        def fake_run(cmd, **kwargs):
+            return SimpleNamespace(returncode=1, stdout="", stderr="fatal: bad revision")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+
+        with pytest.raises(ValueError):
+            resolve_merge_base("origin/dev", repo_path="/repo")
+
+
+class TestFindTargetCommitByMessage:
+    def test_uses_git_log_with_grep(self, monkeypatch):
+        captured: dict[str, object] = {}
+
+        def fake_run(cmd, **kwargs):
+            captured["cmd"] = cmd
+            return SimpleNamespace(returncode=0, stdout="target123\nother456\n", stderr="")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+
+        out = find_target_commit_by_message(
+            base="base123",
+            keyword="[review]",
+            repo_path="/repo",
+        )
+
+        assert out == "target123"
+        assert captured["cmd"] == [
+            "git",
+            "-C",
+            "/repo",
+            "-c",
+            "safe.directory=/repo",
+            "log",
+            "--format=%H",
+            "--fixed-strings",
+            "--grep=[review]",
+            "base123..HEAD",
+        ]
+
+    def test_raises_when_no_matching_commit(self, monkeypatch):
+        def fake_run(cmd, **kwargs):
+            return SimpleNamespace(returncode=0, stdout="\n", stderr="")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+
+        with pytest.raises(ValueError):
+            find_target_commit_by_message(
+                base="base123",
+                keyword="[review]",
+                repo_path="/repo",
+            )

@@ -11,7 +11,8 @@ class FakeStorage:
         pass
 
     def get_or_create_repository_session(self, repository_path: str) -> int:
-        assert repository_path == "/repo"
+        if repository_path != "/repo":
+            raise AssertionError(f"unexpected repository_path: {repository_path}")
         return 1
 
 

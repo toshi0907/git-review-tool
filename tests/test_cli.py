@@ -6,7 +6,7 @@ import pytest
 from git_review_tool import cli
 
 
-class _FakeStorage:
+class FakeStorage:
     def __init__(self, _db_path: str):
         pass
 
@@ -15,9 +15,9 @@ class _FakeStorage:
         return 1
 
 
-class _FakeApp:
+class FakeApp:
     def run(self, **_kwargs) -> None:
-        return None
+        pass
 
 
 def test_auto_detects_base_and_target_from_keyword(monkeypatch):
@@ -54,8 +54,8 @@ def test_auto_detects_base_and_target_from_keyword(monkeypatch):
     monkeypatch.setattr(cli, "get_diff", fake_get_diff)
     monkeypatch.setattr(cli, "parse_diff", lambda _text: [{"file_path": "a", "hunks": [{"body_lines": ["+b"]}]}])
     monkeypatch.setattr(cli, "compute_hunk_hash", lambda _path, _lines: "hunkhash")
-    monkeypatch.setattr(cli, "Storage", _FakeStorage)
-    monkeypatch.setattr(cli, "create_app", lambda **_kwargs: _FakeApp())
+    monkeypatch.setattr(cli, "Storage", FakeStorage)
+    monkeypatch.setattr(cli, "create_app", lambda **_kwargs: FakeApp())
 
     cli.main()
 

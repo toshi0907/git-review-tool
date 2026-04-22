@@ -154,6 +154,7 @@ def find_target_commit_by_message(
             break
     if not target:
         raise ValueError(
-            "コミットメッセージに指定キーワードを含むコミットが見つかりませんでした。"
+            f"コミットメッセージに '{keyword}' を含むコミットが見つかりませんでした"
+            f"（範囲: {base}..{head}）。"
         )
     return target

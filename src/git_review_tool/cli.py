@@ -17,7 +17,11 @@ def main() -> None:
         prog="git-review-tool",
         description="gitコミットの差分をブラウザでレビューするツール",
     )
-    parser.add_argument("commit", nargs="?", help="レビュー対象のコミットハッシュ")
+    parser.add_argument(
+        "commit",
+        nargs="?",
+        help="レビュー対象のコミットハッシュ（省略時は --target-message-keyword で自動検出）",
+    )
     parser.add_argument(
         "--base",
         default=None,

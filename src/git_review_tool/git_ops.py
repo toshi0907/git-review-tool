@@ -139,6 +139,12 @@ def find_target_commit_by_message(
 
     Returns:
         git log の出力順（新しい順）で最初に一致したコミットハッシュ
+
+    Example:
+        `git log --format=%H --fixed-strings --grep=[review] <base>..HEAD`
+        の出力が以下の場合、戻り値は先頭行のコミットハッシュ。
+        9fceb02f4f66f6f3f19d7d3e2b2f4f0fdc4a4d12
+        3d2e1f90b9b4ac53f01d4ccf6d41f8b6abfe1023
     """
     cmd = [
         "git",

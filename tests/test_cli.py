@@ -24,8 +24,8 @@ class FakeApp:
 def test_auto_detects_base_and_target_from_keyword(monkeypatch):
     captured: dict[str, object] = {}
 
-    monkeypatch.setenv("GIT_REVIEW_TOOL_BASE_BRANCH", "origin/dev")
-    monkeypatch.setenv("GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD", "[review]")
+    monkeypatch.setenv("GIT_REVIEW_TOOL_AUTO_BASE_BRANCH", "origin/dev")
+    monkeypatch.setenv("GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD", "[review]")
     monkeypatch.setattr(
         "sys.argv",
         ["git-review-tool", "--repo", "/repo", "--db", "/repo/.git/review_tool.sqlite3"],
@@ -69,8 +69,8 @@ def test_auto_detects_base_and_target_from_keyword(monkeypatch):
 
 
 def test_target_keyword_without_base_raises_error(monkeypatch):
-    monkeypatch.delenv("GIT_REVIEW_TOOL_BASE_BRANCH", raising=False)
-    monkeypatch.delenv("GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD", raising=False)
+    monkeypatch.delenv("GIT_REVIEW_TOOL_AUTO_BASE_BRANCH", raising=False)
+    monkeypatch.delenv("GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD", raising=False)
     monkeypatch.setattr(
         "sys.argv",
         ["git-review-tool", "--repo", "/repo", "--target-message-keyword", "[review]"],

@@ -83,7 +83,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 ### 手順
 
-1. `.env.example` をコピーして `.env` を作成し、`GIT_REVIEW_TOOL_COMMIT`（手動指定）または `GIT_REVIEW_TOOL_BASE_BRANCH` + `GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD`（自動検出）を設定します。
+1. `.env.example` をコピーして `.env` を作成し、`GIT_REVIEW_TOOL_COMMIT`（手動指定）または `GIT_REVIEW_TOOL_AUTO_BASE_BRANCH` + `GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD`（自動検出）を設定します。
 
     ```bash
     cp .env.example .env
@@ -110,8 +110,8 @@ git-review-tool <commit-hash> --encoding euc-jp
     GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_BASE=def5678 docker-compose up   # v1
 
     # BASEブランチとキーワードでレビュー対象コミットを自動検出する場合
-    GIT_REVIEW_TOOL_BASE_BRANCH=main GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD='[review]' docker compose up
-    GIT_REVIEW_TOOL_BASE_BRANCH=main GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD='[review]' docker-compose up   # v1
+    GIT_REVIEW_TOOL_AUTO_BASE_BRANCH=main GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD='[review]' docker compose up
+    GIT_REVIEW_TOOL_AUTO_BASE_BRANCH=main GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD='[review]' docker-compose up   # v1
     ```
 
 3. ブラウザで `http://localhost:5000/` を開いてください。
@@ -129,8 +129,8 @@ git-review-tool <commit-hash> --encoding euc-jp
 |------|-----------|------|
 | `GIT_REVIEW_TOOL_COMMIT` | なし | レビュー対象のコミットハッシュ（手動指定時） |
 | `GIT_REVIEW_TOOL_BASE` | なし | 比較元コミット（指定時は `BASE..COMMIT` の差分） |
-| `GIT_REVIEW_TOOL_BASE_BRANCH` | なし | `BASE` 未指定時、`HEAD` との merge-base 算出に使うブランチ名（例: `main`, `origin/dev`） |
-| `GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD` | なし | `BASE..HEAD` のコミットメッセージにこの文字列を含む最新コミットをレビュー対象として自動検出 |
+| `GIT_REVIEW_TOOL_AUTO_BASE_BRANCH` | なし | `BASE` 未指定時、`HEAD` との merge-base 算出に使うブランチ名（例: `main`, `origin/dev`） |
+| `GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD` | なし | `BASE..HEAD` のコミットメッセージにこの文字列を含む最新コミットをレビュー対象として自動検出 |
 | `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
 | `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |

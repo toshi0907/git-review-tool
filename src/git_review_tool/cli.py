@@ -86,9 +86,9 @@ def main() -> None:
 
     repo_path = os.path.abspath(args.repo)
     base = args.base
-    base_branch = args.base_branch or os.getenv("GIT_REVIEW_TOOL_BASE_BRANCH")
+    base_branch = args.base_branch or os.getenv("GIT_REVIEW_TOOL_AUTO_BASE_BRANCH")
     target_keyword = args.target_message_keyword or os.getenv(
-        "GIT_REVIEW_TOOL_TARGET_MESSAGE_KEYWORD"
+        "GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD"
     )
 
     if not base and base_branch:
@@ -103,7 +103,7 @@ def main() -> None:
         if not base:
             parser.error(
                 "ターゲット自動検出には --base または --base-branch "
-                "（または GIT_REVIEW_TOOL_BASE_BRANCH）が必要です。"
+                "（または GIT_REVIEW_TOOL_AUTO_BASE_BRANCH）が必要です。"
             )
         try:
             commit = find_target_commit_by_message(

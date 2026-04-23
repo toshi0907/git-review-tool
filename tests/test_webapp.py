@@ -71,6 +71,12 @@ class TestIndexRoute:
         resp = client.get("/")
         assert b"line existing comment" in resp.data
 
+    def test_line_comment_input_is_hidden_until_line_click_target_exists(self, client):
+        resp = client.get("/")
+        assert b"diff-line-commentable" in resp.data
+        assert b'aria-label="L1 ' in resp.data
+        assert b'line-comment-row" data-hunk-hash="abc123" data-new-line-num="1"' in resp.data
+
     def test_reviewed_hunk_is_rendered_collapsed_compact(self, client, storage):
         storage.save_reviewed("abc123", True)
         resp = client.get("/")

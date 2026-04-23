@@ -80,6 +80,21 @@
     .line-del  { color: #cf222e; background: #ffebe9; display: block; }
     .line-ctx  { color: #24292f; display: block; }
     .line-hdr  { color: #0969da; background: #ddf4ff; display: block; font-weight: bold; }
+    .diff-line-commentable {
+      cursor: pointer;
+    }
+    .diff-line-commentable:hover {
+      outline: 1px solid #0969da;
+    }
+    .diff-line-commentable.is-active {
+      outline: 2px solid #0969da;
+      outline-offset: -1px;
+    }
+    .diff-line-commentable.has-line-comment::after {
+      content: " 💬";
+      font-size: 0.72rem;
+      opacity: 0.85;
+    }
     textarea.comment-box {
       width: 100%;
       min-height: 72px;
@@ -107,6 +122,10 @@
       border-radius: 4px;
       padding: 8px;
       background: #fff;
+      display: none;
+    }
+    .line-comment-row.is-active {
+      display: block;
     }
     .line-comment-label {
       font-family: monospace;
@@ -246,11 +265,12 @@
         </div>
 
         <div class="hunk-body">
-          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.render_lines %}<span class="line-{{ line.type }}">{{ line.prefix }}{{ line.html | safe }}</span>{% endfor %}</pre>
+          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.render_lines %}<span class="line-{{ line.type }}{% if line.new_line_num is not none %} diff-line-commentable{% if line.saved_line_comment %} has-line-comment{% endif %}{% endif %}"
+                {% if line.new_line_num is not none %}data-hunk-hash="{{ hh }}" data-new-line-num="{{ line.new_line_num }}" tabindex="0" role="button" aria-label="L{{ line.new_line_num }} のコメントを表示"{% endif %}>{{ line.prefix }}{{ line.html | safe }}</span>{% endfor %}</pre>
 
           <div class="line-comments">
             {% for line in hunk.render_lines if line.new_line_num is not none %}
-            <div class="line-comment-row">
+            <div class="line-comment-row" data-hunk-hash="{{ hh }}" data-new-line-num="{{ line.new_line_num }}">
               {% set line_comment_id = "line-comment-" ~ hh[:12] ~ "-" ~ line.new_line_num %}
               <label class="line-comment-label" for="{{ line_comment_id }}">行コメント: L{{ line.new_line_num }}</label>
               <textarea class="line-comment-box"

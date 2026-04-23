@@ -50,6 +50,65 @@ function findLineCommentBox(hunkHash, newLineNum) {
   );
 }
 
+function findLineCommentRow(hunkHash, newLineNum) {
+  return document.querySelector(
+    `.line-comment-row[data-hunk-hash="${hunkHash}"][data-new-line-num="${newLineNum}"]`
+  );
+}
+
+function findDiffLine(hunkHash, newLineNum) {
+  return document.querySelector(
+    `.diff-line-commentable[data-hunk-hash="${hunkHash}"][data-new-line-num="${newLineNum}"]`
+  );
+}
+
+function showLineCommentEditor(hunkHash, newLineNum) {
+  const hunkBlock = document.querySelector(`.hunk-block[data-hunk-hash="${hunkHash}"]`);
+  if (!hunkBlock) return;
+
+  hunkBlock.querySelectorAll(".line-comment-row").forEach((row) => {
+    row.classList.remove("is-active");
+  });
+  hunkBlock.querySelectorAll(".diff-line-commentable").forEach((line) => {
+    line.classList.remove("is-active");
+  });
+
+  const row = findLineCommentRow(hunkHash, newLineNum);
+  const line = findDiffLine(hunkHash, newLineNum);
+  if (!row || !line) return;
+
+  row.classList.add("is-active");
+  line.classList.add("is-active");
+
+  const textarea = row.querySelector("textarea.line-comment-box");
+  if (textarea) {
+    textarea.focus();
+  }
+}
+
+function setLineCommentMarker(hunkHash, newLineNum, hasComment) {
+  const line = findDiffLine(hunkHash, newLineNum);
+  if (!line) return;
+  line.classList.toggle("has-line-comment", hasComment);
+}
+
+document.querySelectorAll(".diff-line-commentable").forEach((line) => {
+  line.addEventListener("click", () => {
+    const hunkHash = line.dataset.hunkHash;
+    const newLineNum = Number(line.dataset.newLineNum || 0);
+    if (!hunkHash || newLineNum <= 0) return;
+    showLineCommentEditor(hunkHash, newLineNum);
+  });
+  line.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    const hunkHash = line.dataset.hunkHash;
+    const newLineNum = Number(line.dataset.newLineNum || 0);
+    if (!hunkHash || newLineNum <= 0) return;
+    showLineCommentEditor(hunkHash, newLineNum);
+  });
+});
+
 // コメント保存ボタン
 document.querySelectorAll("button.hunk-save-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
@@ -114,6 +173,7 @@ document.querySelectorAll("button.line-save-btn").forEach((btn) => {
         comment_text: textarea.value,
       });
       textarea.dataset.initialComment = textarea.value;
+      setLineCommentMarker(hunkHash, newLineNum, textarea.value.trim().length > 0);
       showLineStatus(hunkHash, newLineNum);
     } catch (err) {
       alert("保存に失敗しました: " + err.message);
@@ -150,6 +210,7 @@ document.querySelectorAll("button.line-delete-btn").forEach((btn) => {
       });
       textarea.value = "";
       textarea.dataset.initialComment = "";
+      setLineCommentMarker(hunkHash, newLineNum, false);
       showLineStatus(hunkHash, newLineNum);
     } catch (err) {
       alert("削除に失敗しました: " + err.message);

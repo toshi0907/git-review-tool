@@ -89,7 +89,9 @@ def highlight_diff_lines(
 
     # ファイル拡張子から言語を判定（失敗時は TextLexer でハイライトなし）
     try:
-        lexer = get_lexer_for_filename(file_path, code, stripall=False)
+        lexer = get_lexer_for_filename(
+            file_path, code, stripall=False, stripnl=False
+        )
     except ClassNotFound:
         lexer = TextLexer()
 

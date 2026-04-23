@@ -119,6 +119,12 @@ class TestHighlightDiffLines:
         result = highlight_diff_lines(lines, "foo.py")
         assert len(result) == 2
 
+    def test_leading_blank_line_keeps_alignment(self):
+        lines = [" ", "-x", "+y"]
+        result = highlight_diff_lines(lines, "foo.py")
+        assert "x" in result[1]["html"]
+        assert "y" in result[2]["html"]
+
     def test_html_safe_escaping(self):
         # Pygments は HTML 特殊文字をエスケープするはず
         lines = ['+ x < y && y > 0;']

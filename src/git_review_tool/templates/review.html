@@ -95,6 +95,10 @@
       font-size: 0.72rem;
       opacity: 0.85;
     }
+    .diff-line-commentable.has-line-comment {
+      box-shadow: inset 3px 0 0 #8250df;
+      background-color: #f5f0ff;
+    }
     textarea.comment-box {
       width: 100%;
       min-height: 72px;
@@ -270,7 +274,7 @@
 
           <div class="line-comments">
             {% for line in hunk.render_lines if line.new_line_num is not none %}
-            <div class="line-comment-row" data-hunk-hash="{{ hh }}" data-new-line-num="{{ line.new_line_num }}">
+            <div class="line-comment-row{% if line.saved_line_comment %} is-active{% endif %}" data-hunk-hash="{{ hh }}" data-new-line-num="{{ line.new_line_num }}">
               {% set line_comment_id = "line-comment-" ~ hh[:12] ~ "-" ~ line.new_line_num %}
               <label class="line-comment-label" for="{{ line_comment_id }}">行コメント: L{{ line.new_line_num }}</label>
               <textarea class="line-comment-box"

@@ -62,12 +62,22 @@ function findDiffLine(hunkHash, newLineNum) {
   );
 }
 
+function shouldKeepLineCommentRowOpen(row) {
+  const textarea = row.querySelector("textarea.line-comment-box");
+  if (!textarea) return false;
+  const current = textarea.value.trim();
+  const initial = (textarea.dataset.initialComment || "").trim();
+  return current.length > 0 || initial.length > 0;
+}
+
 function showLineCommentEditor(hunkHash, newLineNum) {
   const hunkBlock = document.querySelector(`.hunk-block[data-hunk-hash="${hunkHash}"]`);
   if (!hunkBlock) return;
 
   hunkBlock.querySelectorAll(".line-comment-row").forEach((row) => {
-    row.classList.remove("is-active");
+    if (!shouldKeepLineCommentRowOpen(row)) {
+      row.classList.remove("is-active");
+    }
   });
   hunkBlock.querySelectorAll(".diff-line-commentable").forEach((line) => {
     line.classList.remove("is-active");
@@ -221,6 +231,10 @@ document.querySelectorAll("button.line-delete-btn").forEach((btn) => {
       });
       textarea.value = "";
       textarea.dataset.initialComment = "";
+      const row = findLineCommentRow(hunkHash, newLineNum);
+      if (row) {
+        row.classList.remove("is-active");
+      }
       setLineCommentMarker(hunkHash, newLineNum, false);
       showLineStatus(hunkHash, newLineNum);
     } catch (err) {

@@ -66,6 +66,34 @@ class TestStorageCommentBatch:
         assert result == {}
 
 
+class TestStorageLineComment:
+    def test_get_line_comment_returns_empty_if_not_saved(self, storage):
+        assert storage.get_line_comment("hash1", 10) == ""
+
+    def test_save_and_get_line_comment(self, storage):
+        storage.save_line_comment("hash1", 10, "line comment")
+        assert storage.get_line_comment("hash1", 10) == "line comment"
+
+    def test_save_line_comment_overwrite(self, storage):
+        storage.save_line_comment("hash1", 10, "first")
+        storage.save_line_comment("hash1", 10, "second")
+        assert storage.get_line_comment("hash1", 10) == "second"
+
+    def test_delete_line_comment(self, storage):
+        storage.save_line_comment("hash1", 10, "delete me")
+        storage.delete_line_comment("hash1", 10)
+        assert storage.get_line_comment("hash1", 10) == ""
+
+    def test_get_line_comments_batch(self, storage):
+        storage.save_line_comment("hash1", 10, "a")
+        storage.save_line_comment("hash1", 11, "b")
+        storage.save_line_comment("hash2", 2, "c")
+        assert storage.get_line_comments_batch(["hash1", "hash2"]) == {
+            "hash1": {10: "a", 11: "b"},
+            "hash2": {2: "c"},
+        }
+
+
 class TestStorageReviewed:
     def test_get_reviewed_returns_false_if_not_saved(self, storage):
         assert storage.get_reviewed("nonexistent") is False
@@ -139,6 +167,14 @@ class TestStorageSession:
         storage.save_comment("hash", "comment session2", session_id=s2)
         assert storage.get_comment("hash", session_id=s1) == "comment session1"
         assert storage.get_comment("hash", session_id=s2) == "comment session2"
+
+    def test_session_scoped_line_comment(self, storage):
+        s1 = storage.get_or_create_session("/repo", "a1", "b1")
+        s2 = storage.get_or_create_session("/repo", "a2", "b2")
+        storage.save_line_comment("hash", 3, "line session1", session_id=s1)
+        storage.save_line_comment("hash", 3, "line session2", session_id=s2)
+        assert storage.get_line_comment("hash", 3, session_id=s1) == "line session1"
+        assert storage.get_line_comment("hash", 3, session_id=s2) == "line session2"
 
     def test_repository_session_is_stable_for_same_repo(self, storage):
         s1 = storage.get_or_create_repository_session("/repo")

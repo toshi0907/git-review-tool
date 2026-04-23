@@ -5,7 +5,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-CURRENT_SCHEMA_VERSION = "2"
+CURRENT_SCHEMA_VERSION = "3"
 REPOSITORY_SESSION_BASE_REVISION = "__repository_review_session_base__"
 REPOSITORY_SESSION_TARGET_REVISION = "__repository_review_session_target__"
 
@@ -69,6 +69,16 @@ class Storage:
                 is_reviewed  INTEGER NOT NULL DEFAULT 0,
                 reviewed_at  TEXT,
                 PRIMARY KEY (session_id, hunk_hash)
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS line_comments (
+                session_id   INTEGER NOT NULL DEFAULT 0,
+                hunk_hash    TEXT NOT NULL,
+                new_line_num INTEGER NOT NULL,
+                comment_text TEXT NOT NULL DEFAULT '',
+                updated_at   TEXT NOT NULL,
+                PRIMARY KEY (session_id, hunk_hash, new_line_num)
             )
         """)
         conn.execute(
@@ -207,6 +217,101 @@ class Storage:
                 params,
             ).fetchall()
         return {row["hunk_hash"]: row["comment_text"] for row in rows}
+
+    def save_line_comment(
+        self,
+        hunk_hash: str,
+        new_line_num: int,
+        comment_text: str,
+        session_id: int = 0,
+    ) -> None:
+        """行コメントを保存（既存は上書き）"""
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO line_comments (
+                    session_id, hunk_hash, new_line_num, comment_text, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(session_id, hunk_hash, new_line_num) DO UPDATE SET
+                    comment_text = excluded.comment_text,
+                    updated_at = excluded.updated_at
+                """,
+                (session_id, hunk_hash, new_line_num, comment_text, now),
+            )
+            conn.commit()
+
+    def get_line_comment(
+        self,
+        hunk_hash: str,
+        new_line_num: int,
+        session_id: int = 0,
+    ) -> str:
+        """行コメントを取得。未保存なら空文字を返す"""
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT comment_text
+                FROM line_comments
+                WHERE session_id = ? AND hunk_hash = ? AND new_line_num = ?
+                """,
+                (session_id, hunk_hash, new_line_num),
+            ).fetchone()
+        return row["comment_text"] if row else ""
+
+    def delete_line_comment(
+        self,
+        hunk_hash: str,
+        new_line_num: int,
+        session_id: int = 0,
+    ) -> None:
+        """行コメントを削除する。"""
+        with self._connect() as conn:
+            conn.execute(
+                """
+                DELETE FROM line_comments
+                WHERE session_id = ? AND hunk_hash = ? AND new_line_num = ?
+                """,
+                (session_id, hunk_hash, new_line_num),
+            )
+            conn.commit()
+
+    def get_line_comments_batch(
+        self,
+        hunk_hashes: list[str],
+        session_id: int = 0,
+    ) -> dict[str, dict[int, str]]:
+        """複数 hunk の行コメントを一括取得する。
+
+        Args:
+            hunk_hashes: 取得対象 hunk hash の一覧
+            session_id: レビューセッションID
+
+        Returns:
+            {hunk_hash: {new_line_num: comment_text}} の辞書
+        """
+        if not hunk_hashes:
+            return {}
+        placeholders = ",".join("?" * len(hunk_hashes))
+        params: list[object] = [session_id]
+        params.extend(hunk_hashes)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT hunk_hash, new_line_num, comment_text
+                FROM line_comments
+                WHERE session_id = ? AND hunk_hash IN ({placeholders})
+                """,
+                params,
+            ).fetchall()
+        result: dict[str, dict[int, str]] = {}
+        for row in rows:
+            hunk_hash = row["hunk_hash"]
+            if hunk_hash not in result:
+                result[hunk_hash] = {}
+            result[hunk_hash][int(row["new_line_num"])] = row["comment_text"]
+        return result
 
     def save_reviewed(
         self,

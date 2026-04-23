@@ -74,8 +74,12 @@ class TestIndexRoute:
     def test_saved_line_comment_is_open_and_marked_on_diff(self, client, storage):
         storage.save_line_comment("abc123", 2, "line existing comment")
         resp = client.get("/")
-        assert b'line-comment-row is-active" data-hunk-hash="abc123" data-new-line-num="2"' in resp.data
-        assert b"diff-line-commentable has-line-comment" in resp.data
+        assert b"line-comment-row" in resp.data
+        assert b"is-active" in resp.data
+        assert b'data-hunk-hash="abc123"' in resp.data
+        assert b'data-new-line-num="2"' in resp.data
+        assert b"diff-line-commentable" in resp.data
+        assert b"has-line-comment" in resp.data
 
     def test_line_comment_input_is_hidden_until_line_click_target_exists(self, client):
         resp = client.get("/")

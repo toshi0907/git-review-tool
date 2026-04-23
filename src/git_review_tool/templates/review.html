@@ -96,6 +96,45 @@
       margin-top: 6px;
       align-items: center;
     }
+    .line-comments {
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .line-comment-row {
+      border: 1px solid #d0d7de;
+      border-radius: 4px;
+      padding: 8px;
+      background: #fff;
+    }
+    .line-comment-label {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #656d76;
+      margin-bottom: 6px;
+    }
+    textarea.line-comment-box {
+      width: 100%;
+      min-height: 50px;
+      font-size: 0.82rem;
+      padding: 6px;
+      border: 1px solid #d0d7de;
+      border-radius: 4px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .line-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .line-save-status {
+      font-size: 0.75rem;
+      color: #1a7f37;
+      display: none;
+    }
     button.save-btn {
       padding: 5px 14px;
       font-size: 0.82rem;
@@ -207,16 +246,44 @@
         </div>
 
         <div class="hunk-body">
-          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.highlighted_lines %}<span class="line-{{ line.type }}">{{ line.prefix }}{{ line.html | safe }}</span>{% endfor %}</pre>
+          <pre class="diff"><span class="line-hdr">{{ hunk.header | e }}</span>{% for line in hunk.render_lines %}<span class="line-{{ line.type }}">{{ line.prefix }}{{ line.html | safe }}</span>{% endfor %}</pre>
+
+          <div class="line-comments">
+            {% for line in hunk.render_lines if line.new_line_num is not none %}
+            <div class="line-comment-row">
+              {% set line_comment_id = "line-comment-" ~ hh[:12] ~ "-" ~ line.new_line_num %}
+              <label class="line-comment-label" for="{{ line_comment_id }}">行コメント: L{{ line.new_line_num }}</label>
+              <textarea class="line-comment-box"
+                        id="{{ line_comment_id }}"
+                        data-hunk-hash="{{ hh }}"
+                        data-new-line-num="{{ line.new_line_num }}"
+                        data-initial-comment="{{ line.saved_line_comment | e }}"
+                        placeholder="この行へのコメントを入力…">{{ line.saved_line_comment }}</textarea>
+              <div class="line-actions">
+                <button class="save-btn line-save-btn"
+                        data-hunk-hash="{{ hh }}"
+                        data-new-line-num="{{ line.new_line_num }}">保存</button>
+                <button class="secondary-btn line-reset-btn"
+                        data-hunk-hash="{{ hh }}"
+                        data-new-line-num="{{ line.new_line_num }}">リセット</button>
+                <button class="secondary-btn delete-btn line-delete-btn"
+                        data-hunk-hash="{{ hh }}"
+                        data-new-line-num="{{ line.new_line_num }}">コメント削除</button>
+                <span class="line-save-status"
+                      id="line-status-{{ hh[:12] }}-{{ line.new_line_num }}">✓ 保存しました</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
 
           <textarea class="comment-box"
                     data-hunk-hash="{{ hh }}"
                     data-initial-comment="{{ hunk.saved_comment | e }}"
                     placeholder="このhunkへのコメントを入力…">{{ hunk.saved_comment }}</textarea>
           <div class="hunk-actions">
-            <button class="save-btn" data-hunk-hash="{{ hh }}">保存</button>
+            <button class="save-btn hunk-save-btn" data-hunk-hash="{{ hh }}">保存</button>
             <button class="secondary-btn reset-btn" data-hunk-hash="{{ hh }}">リセット</button>
-            <button class="secondary-btn delete-btn" data-hunk-hash="{{ hh }}">コメント削除</button>
+            <button class="secondary-btn delete-btn hunk-delete-btn" data-hunk-hash="{{ hh }}">コメント削除</button>
             <span class="save-status" id="status-{{ hh[:12] }}">✓ 保存しました</span>
           </div>
         </div>

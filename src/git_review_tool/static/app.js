@@ -32,12 +32,26 @@ function showStatus(hunkHash) {
   setTimeout(() => { el.style.display = "none"; }, 2000);
 }
 
+function showLineStatus(hunkHash, newLineNum) {
+  const shortHash = hunkHash.slice(0, 12);
+  const el = document.getElementById(`line-status-${shortHash}-${newLineNum}`);
+  if (!el) return;
+  el.style.display = "inline";
+  setTimeout(() => { el.style.display = "none"; }, 2000);
+}
+
 function findCommentBox(hunkHash) {
   return document.querySelector(`textarea[data-hunk-hash="${hunkHash}"]`);
 }
 
+function findLineCommentBox(hunkHash, newLineNum) {
+  return document.querySelector(
+    `textarea.line-comment-box[data-hunk-hash="${hunkHash}"][data-new-line-num="${newLineNum}"]`
+  );
+}
+
 // コメント保存ボタン
-document.querySelectorAll("button.save-btn").forEach((btn) => {
+document.querySelectorAll("button.hunk-save-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
     const hunkHash = btn.dataset.hunkHash;
     const textarea = findCommentBox(hunkHash);
@@ -66,7 +80,7 @@ document.querySelectorAll("button.reset-btn").forEach((btn) => {
 });
 
 // コメント削除
-document.querySelectorAll("button.delete-btn").forEach((btn) => {
+document.querySelectorAll("button.hunk-delete-btn").forEach((btn) => {
   btn.addEventListener("click", async () => {
     const hunkHash = btn.dataset.hunkHash;
     const textarea = findCommentBox(hunkHash);
@@ -80,6 +94,63 @@ document.querySelectorAll("button.delete-btn").forEach((btn) => {
       textarea.value = "";
       textarea.dataset.initialComment = "";
       showStatus(hunkHash);
+    } catch (err) {
+      alert("削除に失敗しました: " + err.message);
+    }
+  });
+});
+
+// 行コメント保存
+document.querySelectorAll("button.line-save-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const hunkHash = btn.dataset.hunkHash;
+    const newLineNum = Number(btn.dataset.newLineNum || 0);
+    const textarea = findLineCommentBox(hunkHash, newLineNum);
+    if (!textarea) return;
+    try {
+      await postJSON("/api/line-comment", {
+        hunk_hash: hunkHash,
+        new_line_num: newLineNum,
+        comment_text: textarea.value,
+      });
+      textarea.dataset.initialComment = textarea.value;
+      showLineStatus(hunkHash, newLineNum);
+    } catch (err) {
+      alert("保存に失敗しました: " + err.message);
+    }
+  });
+});
+
+// 行コメントリセット
+document.querySelectorAll("button.line-reset-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const hunkHash = btn.dataset.hunkHash;
+    const newLineNum = Number(btn.dataset.newLineNum || 0);
+    const textarea = findLineCommentBox(hunkHash, newLineNum);
+    if (!textarea) return;
+    textarea.value = textarea.dataset.initialComment || "";
+  });
+});
+
+// 行コメント削除
+document.querySelectorAll("button.line-delete-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const hunkHash = btn.dataset.hunkHash;
+    const newLineNum = Number(btn.dataset.newLineNum || 0);
+    const textarea = findLineCommentBox(hunkHash, newLineNum);
+    if (!textarea) return;
+
+    if (!window.confirm(`L${newLineNum} のコメントを削除しますか？`)) {
+      return;
+    }
+    try {
+      await deleteJSON("/api/line-comment", {
+        hunk_hash: hunkHash,
+        new_line_num: newLineNum,
+      });
+      textarea.value = "";
+      textarea.dataset.initialComment = "";
+      showLineStatus(hunkHash, newLineNum);
     } catch (err) {
       alert("削除に失敗しました: " + err.message);
     }

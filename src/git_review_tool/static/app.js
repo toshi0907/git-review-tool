@@ -92,20 +92,31 @@ function setLineCommentMarker(hunkHash, newLineNum, hasComment) {
   line.classList.toggle("has-line-comment", hasComment);
 }
 
+function getLineTarget(line) {
+  const hunkHash = line.dataset.hunkHash;
+  const rawLineNum = line.dataset.newLineNum;
+  if (!hunkHash || !rawLineNum) {
+    return null;
+  }
+  const newLineNum = Number(rawLineNum);
+  if (!Number.isInteger(newLineNum) || newLineNum <= 0) {
+    return null;
+  }
+  return { hunkHash, newLineNum };
+}
+
 document.querySelectorAll(".diff-line-commentable").forEach((line) => {
   line.addEventListener("click", () => {
-    const hunkHash = line.dataset.hunkHash;
-    const newLineNum = Number(line.dataset.newLineNum || 0);
-    if (!hunkHash || newLineNum <= 0) return;
-    showLineCommentEditor(hunkHash, newLineNum);
+    const target = getLineTarget(line);
+    if (!target) return;
+    showLineCommentEditor(target.hunkHash, target.newLineNum);
   });
   line.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
-    const hunkHash = line.dataset.hunkHash;
-    const newLineNum = Number(line.dataset.newLineNum || 0);
-    if (!hunkHash || newLineNum <= 0) return;
-    showLineCommentEditor(hunkHash, newLineNum);
+    const target = getLineTarget(line);
+    if (!target) return;
+    showLineCommentEditor(target.hunkHash, target.newLineNum);
   });
 });
 

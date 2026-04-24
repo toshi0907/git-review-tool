@@ -72,6 +72,40 @@ class TestIndexRoute:
         assert b"is-reviewed is-collapsed" in resp.data
         assert "\u2713 \u30b3\u30f3\u30d1\u30af\u30c8\u8868\u793a".encode("utf-8") in resp.data
 
+    def test_toc_sidebar_present(self, client):
+        resp = client.get("/")
+        assert b'id="toc-sidebar"' in resp.data
+
+    def test_toc_contains_file_link(self, client):
+        resp = client.get("/")
+        assert b'href="#file-1"' in resp.data
+
+    def test_toc_shows_basename(self, client):
+        resp = client.get("/")
+        # foo.py の basename は "foo.py"（パスではなくファイル名のみ）
+        assert b"foo.py" in resp.data
+
+    def test_toc_basename_for_nested_path(self, tmp_path, storage):
+        nested_files = [
+            {
+                "file_path": "src/pkg/module.py",
+                "hunks": [
+                    {
+                        "header": "@@ -1 +1 @@",
+                        "body_lines": ["+new line"],
+                        "hunk_hash": "xyz789",
+                    }
+                ],
+            }
+        ]
+        app = create_app(nested_files, storage, commit="cafebabe", session_id=0)
+        app.config["TESTING"] = True
+        with app.test_client() as c:
+            resp = c.get("/")
+        assert b"module.py" in resp.data
+        # フルパスもタイトル属性に表示
+        assert b"src/pkg/module.py" in resp.data
+
 
 class TestApiComment:
     def test_save_comment_success(self, client, storage):

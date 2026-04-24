@@ -1,6 +1,7 @@
 """Flask Webアプリケーション"""
 from __future__ import annotations
 
+import os.path
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
@@ -33,6 +34,9 @@ def create_app(
         template_folder=str(template_dir),
         static_folder=str(static_dir),
     )
+
+    # Jinja2 カスタムフィルター
+    app.jinja_env.filters["basename"] = os.path.basename
 
     # シンタックスハイライトをアプリ起動時に一度だけ適用
     pygments_css = get_pygments_css()

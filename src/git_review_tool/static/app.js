@@ -271,3 +271,55 @@ document.querySelectorAll("input.reviewed-cb").forEach((cb) => {
     }
   });
 });
+
+// フローティングTOCサイドバー
+(function initToc() {
+  const sidebar = document.getElementById("toc-sidebar");
+  if (!sidebar) return;
+
+  const headerEl = document.querySelector("header");
+  const headerGap = document.getElementById("toc-header-gap");
+  const fileBlocks = Array.from(document.querySelectorAll(".file-block"));
+  const tocItems = Array.from(document.querySelectorAll(".toc-item"));
+
+  // TOCのヘッダーギャップをヘッダー高さに合わせる
+  function syncHeaderGap() {
+    if (headerEl && headerGap) {
+      headerGap.style.height = headerEl.offsetHeight + "px";
+    }
+  }
+  syncHeaderGap();
+  window.addEventListener("resize", syncHeaderGap);
+
+  // アクティブファイルをTOCで強調表示
+  function updateActiveTocItem() {
+    const headerH = headerEl ? headerEl.offsetHeight : 0;
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    let activeIdx = 1;
+    fileBlocks.forEach((block, i) => {
+      const blockTop = block.getBoundingClientRect().top + scrollY;
+      if (scrollY + headerH + 8 >= blockTop) {
+        activeIdx = i + 1;
+      }
+    });
+
+    tocItems.forEach((item) => {
+      const idx = parseInt(item.dataset.fileIndex, 10);
+      const nowActive = idx === activeIdx;
+      const wasActive = item.classList.contains("is-active");
+      if (wasActive !== nowActive) {
+        item.classList.toggle("is-active", nowActive);
+      }
+    });
+
+    // アクティブアイテムをTOCパネル内でスクロールして表示
+    const activeItem = sidebar.querySelector(".toc-item.is-active");
+    if (activeItem) {
+      activeItem.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  window.addEventListener("scroll", updateActiveTocItem, { passive: true });
+  updateActiveTocItem();
+})();

@@ -20,6 +20,7 @@
       font-size: 1rem;
     }
     header code { background: #444d56; padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
+    .page-main { margin-left: 220px; }
     .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
     .file-block {
       background: #fff;
@@ -238,9 +239,89 @@
     }
     /* Pygments シンタックスハイライト（diff 内に適用） */
     {{ pygments_css | safe }}
+
+    /* フローティングTOCサイドバー */
+    html { scroll-behavior: smooth; }
+    .toc-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 220px;
+      height: 100vh;
+      overflow-y: auto;
+      background: #fff;
+      border-right: 1px solid #d0d7de;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+    .toc-sidebar-inner {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .toc-header-gap {
+      flex-shrink: 0;
+      background: #24292f;
+    }
+    .toc-title {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 10px 12px 8px 12px;
+      border-bottom: 1px solid #d0d7de;
+    }
+    .toc-list {
+      list-style: none;
+      margin: 0;
+      padding: 4px 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .toc-item a {
+      display: block;
+      padding: 5px 10px 5px 13px;
+      text-decoration: none;
+      color: #24292f;
+      font-size: 0.76rem;
+      font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 3px solid transparent;
+      transition: background 0.1s, color 0.1s;
+    }
+    .toc-item a:hover {
+      background: #f6f8fa;
+      color: #0969da;
+    }
+    .toc-item.is-active a {
+      background: #ddf4ff;
+      color: #0969da;
+      font-weight: bold;
+      border-left-color: #0969da;
+    }
   </style>
 </head>
 <body>
+  <nav class="toc-sidebar" id="toc-sidebar" aria-label="ファイル一覧">
+    <div class="toc-sidebar-inner">
+      <div class="toc-header-gap" id="toc-header-gap"></div>
+      <div class="toc-title">📁 ファイル一覧</div>
+      <ul class="toc-list">
+        {% for file in files %}
+        <li class="toc-item" data-file-index="{{ loop.index }}" id="toc-item-{{ loop.index }}">
+          <a href="#file-{{ loop.index }}" title="{{ file.file_path }}">{{ file.file_path | basename }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </nav>
+  <div class="page-main">
   <header>
     git-review-tool &nbsp;–&nbsp; commit: <code>{{ commit }}</code>
   </header>
@@ -317,6 +398,7 @@
     </div>
     {% endfor %}
   </div>
+  </div><!-- .page-main -->
   <script src="/static/app.js"></script>
 </body>
 </html>

@@ -20,6 +20,7 @@
       font-size: 1rem;
     }
     header code { background: #444d56; padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
+    .page-main { margin-left: 220px; }
     .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
     .file-block {
       background: #fff;
@@ -258,6 +259,7 @@
       </ul>
     </div>
   </nav>
+  <div class="page-main">
   <header>
     git-review-tool &nbsp;–&nbsp; commit: <code>{{ commit }}</code>
   </header>
@@ -305,6 +307,7 @@
     </div>
     {% endfor %}
   </div>
+  </div><!-- .page-main -->
   <script src="/static/app.js"></script>
 </body>
 </html>

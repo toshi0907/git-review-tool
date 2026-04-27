@@ -4,12 +4,15 @@ from __future__ import annotations
 import argparse
 import sys
 import os
+from typing import Optional
 
 from .git_ops import get_diff, resolve_merge_base, find_target_commit_by_message
 from .diff_parser import parse_diff
 from .hunk_id import compute_hunk_hash
 from .storage import Storage
 from .webapp import create_app
+
+_HASH_DISPLAY_LEN = 12
 
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
@@ -72,11 +75,11 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
 def _resolve_commit_and_db(
     parser: argparse.ArgumentParser,
     args: argparse.Namespace,
-) -> tuple[str, str, str, str]:
+) -> tuple[str, str, str, Optional[str]]:
     """引数からコミット、DB パス、リポジトリパス、base を解決して返す。
 
     Returns:
-        (commit, db_path, repo_path, base)
+        (commit, db_path, repo_path, base)  base は未指定時 None
     """
     repo_path = os.path.abspath(args.repo)
     base = args.base
@@ -127,7 +130,7 @@ def _resolve_commit_and_db(
             sys.exit(1)
         db_path = os.path.join(git_dir, "review_tool.sqlite3")
 
-    return commit, db_path, repo_path, base or ""
+    return commit, db_path, repo_path, base
 
 
 def main() -> None:
@@ -157,7 +160,7 @@ def main() -> None:
     else:
         print(f"コミット {commit} の差分を取得中...")
     try:
-        diff_text = get_diff(commit, repo_path, base=base or None, encoding=args.encoding)
+        diff_text = get_diff(commit, repo_path, base=base, encoding=args.encoding)
     except ValueError as exc:
         print(f"エラー: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -209,7 +212,7 @@ def check_main() -> None:
 
     # diff 取得
     try:
-        diff_text = get_diff(commit, repo_path, base=base or None, encoding=args.encoding)
+        diff_text = get_diff(commit, repo_path, base=base, encoding=args.encoding)
     except ValueError as exc:
         print(f"エラー: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -242,5 +245,5 @@ def check_main() -> None:
         print(f"✗ {reviewed_count}/{total} hunk のみレビュー済みです。")
         print(f"未レビュー hunk（{len(unreviewed)} 件）:")
         for h in unreviewed:
-            print(f"  {h[:12]}...")
+            print(f"  {h[:_HASH_DISPLAY_LEN]}...")
         sys.exit(1)

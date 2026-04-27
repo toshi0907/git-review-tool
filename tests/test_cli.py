@@ -19,7 +19,7 @@ class FakeStorage:
     def get_reviewed_batch(
         self, hunk_hashes: list[str], session_id: int = 0
     ) -> dict[str, bool]:
-        return {h: self._reviewed.get(h, False) for h in hunk_hashes if h in self._reviewed}
+        return {h: self._reviewed.get(h, False) for h in hunk_hashes}
 
 
 class FakeStorageAllReviewed(FakeStorage):

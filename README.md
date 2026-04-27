@@ -47,6 +47,35 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 起動後、ブラウザで `http://127.0.0.1:5000/` を開いてください。
 
+## レビュー完了確認
+
+`git-review-tool-check` コマンドで、全 hunk がレビュー済みかどうかを確認できます。  
+シェルスクリプトからの呼び出しを想定しており、終了コードで結果を返します。
+
+| 終了コード | 意味 |
+|-----------|------|
+| `0` | 全 hunk のレビューが完了している（または差分なし） |
+| `1` | 未レビューの hunk が存在する |
+| `2` | 引数エラー |
+
+```bash
+# 全 hunk のレビュー完了を確認（exit 0 で完了）
+git-review-tool-check <commit-hash>
+
+# 2コミット間差分のレビュー完了を確認
+git-review-tool-check <target-commit> --base <base-commit>
+
+# シェルスクリプトでの利用例
+if git-review-tool-check <commit-hash>; then
+    echo "レビュー完了 ✓"
+else
+    echo "未レビューの hunk があります"
+    exit 1
+fi
+```
+
+`git-review-tool-check` は `git-review-tool` と同じ `--repo`、`--db`、`--base`、`--base-branch`、`--target-message-keyword`、`--encoding` オプションに対応しています。
+
 ## オプション
 
 | オプション | デフォルト | 説明 |
@@ -72,6 +101,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 - コメント・レビュー状態は SQLite に永続化（サーバ再起動後も復元）
 - コメント・レビュー状態はリポジトリ単位で永続化（コミットハッシュ変更後も同一hunkなら復元）
 - hunk hash（SHA256）による決定論的な hunk 識別
+- **レビュー完了確認**: `git-review-tool-check` で全 hunk のレビュー完了をシェルスクリプトから確認可能（exit 0 で完了、exit 1 で未完了）
 - DB破損時は自動でDBを再生成して復旧
 
 ## Docker Compose で使う

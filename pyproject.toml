@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 git-review-tool = "git_review_tool.cli:main"
+git-review-tool-check = "git_review_tool.cli:check_main"
 
 [project.optional-dependencies]
 dev = [

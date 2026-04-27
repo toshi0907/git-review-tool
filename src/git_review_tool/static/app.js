@@ -243,6 +243,22 @@ document.querySelectorAll("button.line-delete-btn").forEach((btn) => {
   });
 });
 
+// 未レビューhunk数カウンタを更新
+function updateUnreviewedCounter() {
+  const countEl = document.getElementById("unreviewed-count");
+  const counterEl = document.getElementById("unreviewed-counter");
+  if (!countEl || !counterEl) return;
+  const total = document.querySelectorAll(".hunk-block").length;
+  const reviewed = document.querySelectorAll(".hunk-block.is-reviewed").length;
+  const unreviewed = total - reviewed;
+  countEl.textContent = unreviewed;
+  if (unreviewed === 0) {
+    counterEl.classList.add("all-done");
+  } else {
+    counterEl.classList.remove("all-done");
+  }
+}
+
 // レビュー済みチェックボックス
 document.querySelectorAll("input.reviewed-cb").forEach((cb) => {
   cb.addEventListener("change", async () => {
@@ -264,6 +280,7 @@ document.querySelectorAll("input.reviewed-cb").forEach((cb) => {
           block.classList.remove("is-collapsed");
         }
       }
+      updateUnreviewedCounter();
     } catch (err) {
       // チェック状態を元に戻す
       cb.checked = !isReviewed;

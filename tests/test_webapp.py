@@ -127,6 +127,25 @@ class TestIndexRoute:
         # フルパスもタイトル属性に表示
         assert b"src/pkg/module.py" in resp.data
 
+    def test_unreviewed_counter_present(self, client):
+        resp = client.get("/")
+        assert b'id="unreviewed-counter"' in resp.data
+        assert b'id="unreviewed-count"' in resp.data
+
+    def test_unreviewed_counter_shows_unreviewed_count(self, client):
+        # 1 hunk, 未レビュー → カウンタは 1
+        resp = client.get("/")
+        html = resp.data.decode("utf-8")
+        assert 'id="unreviewed-count">1<' in html
+
+    def test_unreviewed_counter_decrements_when_reviewed(self, client, storage):
+        # hunk をレビュー済みにするとカウンタが 0 になる
+        storage.save_reviewed("abc123", True)
+        resp = client.get("/")
+        html = resp.data.decode("utf-8")
+        assert 'id="unreviewed-count">0<' in html
+        assert 'all-done' in html
+
 
 class TestApiComment:
     def test_save_comment_success(self, client, storage):

@@ -305,6 +305,32 @@
       font-weight: bold;
       border-left-color: #0969da;
     }
+    .unreviewed-counter {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      border-bottom: 1px solid #d0d7de;
+      font-size: 0.78rem;
+      color: #57606a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .unreviewed-badge {
+      display: inline-block;
+      background: #cf222e;
+      color: #fff;
+      border-radius: 999px;
+      padding: 0 7px;
+      font-size: 0.74rem;
+      font-weight: bold;
+      line-height: 1.6;
+      min-width: 22px;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .unreviewed-counter.all-done .unreviewed-badge {
+      background: #1a7f37;
+    }
   </style>
 </head>
 <body>
@@ -312,6 +338,21 @@
     <div class="toc-sidebar-inner">
       <div class="toc-header-gap" id="toc-header-gap"></div>
       <div class="toc-title">📁 ファイル一覧</div>
+      {% set total_hunks = namespace(n=0) %}
+      {% set unreviewed_hunks = namespace(n=0) %}
+      {% for f in files %}
+        {% for hunk in f.hunks %}
+          {% set total_hunks.n = total_hunks.n + 1 %}
+          {% if not hunk.is_reviewed %}
+            {% set unreviewed_hunks.n = unreviewed_hunks.n + 1 %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+      <div class="unreviewed-counter{% if unreviewed_hunks.n == 0 %} all-done{% endif %}" id="unreviewed-counter">
+        未レビュー:
+        <span class="unreviewed-badge" id="unreviewed-count">{{ unreviewed_hunks.n }}</span>
+        / {{ total_hunks.n }}
+      </div>
       <ul class="toc-list">
         {% for file in files %}
         <li class="toc-item" data-file-index="{{ loop.index }}" id="toc-item-{{ loop.index }}">

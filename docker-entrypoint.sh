@@ -31,7 +31,7 @@ if [ "$has_manual_commit" -eq 0 ] && { [ "$has_target_keyword" -eq 0 ] || [ "$ha
     exit 1
 fi
 
-set -- --repo /repo --db /data/review_tool.sqlite3 --host 0.0.0.0 --port 5000
+set -- --repo /repo --db /data/review_tool.sqlite3
 
 if [ -n "$GIT_REVIEW_TOOL_COMMIT" ]; then
     set -- "$GIT_REVIEW_TOOL_COMMIT" "$@"
@@ -53,4 +53,8 @@ if [ -n "$GIT_REVIEW_TOOL_ENCODING" ]; then
     set -- "$@" --encoding "$GIT_REVIEW_TOOL_ENCODING"
 fi
 
-exec git-review-tool "$@"
+if [ "${GIT_REVIEW_TOOL_MODE:-serve}" = "check" ]; then
+    exec git-review-tool-check "$@"
+else
+    exec git-review-tool "$@" --host 0.0.0.0 --port 5000
+fi

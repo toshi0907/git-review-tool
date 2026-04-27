@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import sys
 import os
+from typing import Optional
 
 from .git_ops import get_diff, resolve_merge_base, find_target_commit_by_message
 from .diff_parser import parse_diff
@@ -11,12 +12,11 @@ from .hunk_id import compute_hunk_hash
 from .storage import Storage
 from .webapp import create_app
 
+_HASH_DISPLAY_LEN = 12
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="git-review-tool",
-        description="gitコミットの差分をブラウザでレビューするツール",
-    )
+
+def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
+    """複数コマンドで共通の引数を追加するヘルパー。"""
     parser.add_argument(
         "commit",
         nargs="?",
@@ -70,20 +70,17 @@ def main() -> None:
         metavar="ENCODING",
         help="差分のエンコーディングを明示的に指定（例: euc-jp, shift_jis）。省略時は自動検出",
     )
-    parser.add_argument(
-        "--host",
-        default="127.0.0.1",
-        help="Flaskサーバのホスト（デフォルト: 127.0.0.1）",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=5000,
-        help="Flaskサーバのポート（デフォルト: 5000）",
-    )
 
-    args = parser.parse_args()
 
+def _resolve_commit_and_db(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+) -> tuple[str, str, str, Optional[str]]:
+    """引数からコミット、DB パス、リポジトリパス、base を解決して返す。
+
+    Returns:
+        (commit, db_path, repo_path, base)  base は未指定時 None
+    """
     repo_path = os.path.abspath(args.repo)
     base = args.base
     base_branch = args.base_branch or os.getenv("GIT_REVIEW_TOOL_AUTO_BASE_BRANCH")
@@ -121,7 +118,6 @@ def main() -> None:
             "--base または --base-branch と --target-message-keyword を指定してください。"
         )
 
-    # DB パスの決定
     if args.db:
         db_path = args.db
     else:
@@ -133,6 +129,30 @@ def main() -> None:
             )
             sys.exit(1)
         db_path = os.path.join(git_dir, "review_tool.sqlite3")
+
+    return commit, db_path, repo_path, base
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="git-review-tool",
+        description="gitコミットの差分をブラウザでレビューするツール",
+    )
+    _add_common_arguments(parser)
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Flaskサーバのホスト（デフォルト: 127.0.0.1）",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=5000,
+        help="Flaskサーバのポート（デフォルト: 5000）",
+    )
+
+    args = parser.parse_args()
+    commit, db_path, repo_path, base = _resolve_commit_and_db(parser, args)
 
     # diff 取得
     if base:
@@ -170,3 +190,60 @@ def main() -> None:
     print(f"ブラウザで http://{args.host}:{args.port}/ を開いてください。")
     print("終了するには Ctrl+C を押してください。")
     app.run(host=args.host, port=args.port, debug=False)
+
+
+def check_main() -> None:
+    """全 hunk のレビュー完了状態を確認するコマンド。
+
+    未レビューの hunk があれば終了コード 1 を返します。
+    シェルスクリプトからの呼び出しを想定しています。
+    """
+    parser = argparse.ArgumentParser(
+        prog="git-review-tool-check",
+        description=(
+            "全 hunk のレビュー完了状態を確認します。"
+            "未レビュー hunk があれば終了コード 1 を返します。"
+        ),
+    )
+    _add_common_arguments(parser)
+
+    args = parser.parse_args()
+    commit, db_path, repo_path, base = _resolve_commit_and_db(parser, args)
+
+    # diff 取得
+    try:
+        diff_text = get_diff(commit, repo_path, base=base, encoding=args.encoding)
+    except ValueError as exc:
+        print(f"エラー: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if not diff_text.strip():
+        print("差分が見つかりませんでした。レビュー対象の hunk はありません。")
+        sys.exit(0)
+
+    # diff パース & hunk hash 収集
+    files = parse_diff(diff_text)
+    all_hunk_hashes: list[str] = []
+    for f in files:
+        for hunk in f["hunks"]:
+            all_hunk_hashes.append(compute_hunk_hash(f["file_path"], hunk["body_lines"]))
+
+    # ストレージ初期化
+    storage = Storage(db_path)
+    session_id = storage.get_or_create_repository_session(repository_path=repo_path)
+
+    # レビュー状態チェック
+    reviewed_status = storage.get_reviewed_batch(all_hunk_hashes, session_id=session_id)
+    total = len(all_hunk_hashes)
+    reviewed_count = sum(1 for h in all_hunk_hashes if reviewed_status.get(h, False))
+    unreviewed = [h for h in all_hunk_hashes if not reviewed_status.get(h, False)]
+
+    if not unreviewed:
+        print(f"✓ 全 {total} hunk のレビューが完了しています。")
+        sys.exit(0)
+    else:
+        print(f"✗ {reviewed_count}/{total} hunk のみレビュー済みです。")
+        print(f"未レビュー hunk（{len(unreviewed)} 件）:")
+        for h in unreviewed:
+            print(f"  {h[:_HASH_DISPLAY_LEN]}...")
+        sys.exit(1)

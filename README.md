@@ -47,6 +47,35 @@ git-review-tool <commit-hash> --encoding euc-jp
 
 起動後、ブラウザで `http://127.0.0.1:5000/` を開いてください。
 
+## レビュー完了確認
+
+`git-review-tool-check` コマンドで、全 hunk がレビュー済みかどうかを確認できます。  
+シェルスクリプトからの呼び出しを想定しており、終了コードで結果を返します。
+
+| 終了コード | 意味 |
+|-----------|------|
+| `0` | 全 hunk のレビューが完了している（または差分なし） |
+| `1` | 未レビューの hunk が存在する |
+| `2` | 引数エラー |
+
+```bash
+# 全 hunk のレビュー完了を確認（exit 0 で完了）
+git-review-tool-check <commit-hash>
+
+# 2コミット間差分のレビュー完了を確認
+git-review-tool-check <target-commit> --base <base-commit>
+
+# シェルスクリプトでの利用例
+if git-review-tool-check <commit-hash>; then
+    echo "レビュー完了 ✓"
+else
+    echo "未レビューの hunk があります"
+    exit 1
+fi
+```
+
+`git-review-tool-check` は `git-review-tool` と同じ `--repo`、`--db`、`--base`、`--base-branch`、`--target-message-keyword`、`--encoding` オプションに対応しています。
+
 ## オプション
 
 | オプション | デフォルト | 説明 |
@@ -72,6 +101,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 - コメント・レビュー状態は SQLite に永続化（サーバ再起動後も復元）
 - コメント・レビュー状態はリポジトリ単位で永続化（コミットハッシュ変更後も同一hunkなら復元）
 - hunk hash（SHA256）による決定論的な hunk 識別
+- **レビュー完了確認**: `git-review-tool-check` で全 hunk のレビュー完了をシェルスクリプトから確認可能（exit 0 で完了、exit 1 で未完了）
 - DB破損時は自動でDBを再生成して復旧
 
 ## Docker Compose で使う
@@ -123,6 +153,20 @@ git-review-tool <commit-hash> --encoding euc-jp
     docker-compose down          # Docker Compose v1
     ```
 
+### レビュー完了確認（check モード）
+
+`GIT_REVIEW_TOOL_MODE=check` を設定することで、Flaskサーバを起動せずに全 hunk のレビュー完了状態を確認できます。  
+シェルスクリプトや CI から呼び出す用途に適しています。
+
+```bash
+# 全 hunk のレビュー完了を確認（exit 0: 完了, exit 1: 未完了）
+GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_MODE=check docker compose run --rm git-review-tool
+GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_MODE=check docker-compose run --rm git-review-tool   # v1
+
+# 別リポジトリを指定する場合
+GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo GIT_REVIEW_TOOL_MODE=check docker compose run --rm git-review-tool
+```
+
 ### 環境変数
 
 | 変数 | デフォルト | 説明 |
@@ -134,6 +178,7 @@ git-review-tool <commit-hash> --encoding euc-jp
 | `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
 | `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
+| `GIT_REVIEW_TOOL_MODE` | `serve` | 動作モード。`serve`: Flaskサーバ起動（デフォルト）、`check`: レビュー完了確認のみ実行（exit 0: 完了, exit 1: 未完了） |
 
 > **注意**: コンテナ内の SQLite データベースは `review-data` という名前付きボリュームに保存されます。  
 > `docker compose down -v`（v2）または `docker-compose down -v`（v1）を実行するとボリューム（レビューデータ）も削除されます。  

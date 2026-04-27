@@ -15,6 +15,7 @@ services:
       - GIT_REVIEW_TOOL_AUTO_BASE_BRANCH
       - GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD
       - GIT_REVIEW_TOOL_ENCODING
+      - GIT_REVIEW_TOOL_MODE
 
 volumes:
   review-data:

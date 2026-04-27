@@ -153,6 +153,20 @@ fi
     docker-compose down          # Docker Compose v1
     ```
 
+### レビュー完了確認（check モード）
+
+`GIT_REVIEW_TOOL_MODE=check` を設定することで、Flaskサーバを起動せずに全 hunk のレビュー完了状態を確認できます。  
+シェルスクリプトや CI から呼び出す用途に適しています。
+
+```bash
+# 全 hunk のレビュー完了を確認（exit 0: 完了, exit 1: 未完了）
+GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_MODE=check docker compose run --rm git-review-tool
+GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_MODE=check docker-compose run --rm git-review-tool   # v1
+
+# 別リポジトリを指定する場合
+GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo GIT_REVIEW_TOOL_MODE=check docker compose run --rm git-review-tool
+```
+
 ### 環境変数
 
 | 変数 | デフォルト | 説明 |
@@ -164,6 +178,7 @@ fi
 | `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
 | `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
+| `GIT_REVIEW_TOOL_MODE` | `serve` | 動作モード。`serve`: Flaskサーバ起動（デフォルト）、`check`: レビュー完了確認のみ実行（exit 0: 完了, exit 1: 未完了） |
 
 > **注意**: コンテナ内の SQLite データベースは `review-data` という名前付きボリュームに保存されます。  
 > `docker compose down -v`（v2）または `docker-compose down -v`（v1）を実行するとボリューム（レビューデータ）も削除されます。  

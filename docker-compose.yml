@@ -3,7 +3,7 @@ services:
   git-review-tool:
     build: .
     ports:
-      - "${GIT_REVIEW_TOOL_PORT:-5000}:5000"
+      - "127.0.0.1:${GIT_REVIEW_TOOL_PORT:-5000}:5000"
     volumes:
       # レビュー対象のgitリポジトリをマウント（デフォルト: カレントディレクトリ）
       - "${GIT_REVIEW_TOOL_REPO_PATH:-.}:/repo:ro"

@@ -176,7 +176,7 @@ GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo GIT_REVIE
 | `GIT_REVIEW_TOOL_AUTO_BASE_BRANCH` | なし | `BASE` 未指定時、`HEAD` との merge-base 算出に使うブランチ名（例: `main`, `origin/dev`） |
 | `GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD` | なし | `BASE..HEAD` のコミットメッセージにこの文字列を含む最新コミットをレビュー対象として自動検出 |
 | `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
-| `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000） |
+| `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000）。デフォルトでは `127.0.0.1` にバインドされます |
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
 | `GIT_REVIEW_TOOL_MODE` | `serve` | 動作モード。`serve`: Flaskサーバ起動（デフォルト）、`check`: レビュー完了確認のみ実行（exit 0: 完了, exit 1: 未完了） |
 

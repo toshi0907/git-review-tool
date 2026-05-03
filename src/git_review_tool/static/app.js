@@ -340,3 +340,190 @@ document.querySelectorAll("input.reviewed-cb").forEach((cb) => {
   window.addEventListener("scroll", updateActiveTocItem, { passive: true });
   updateActiveTocItem();
 })();
+
+// ── キーワード検出・ハイライト ────────────────────────────────────────
+
+(function initKeywords() {
+  let currentKeywords = Array.isArray(window._initialKeywords)
+    ? window._initialKeywords.slice()
+    : [];
+
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /**
+   * 要素内のテキストノードを走査してキーワードをハイライトする。
+   * ハイライト済みの <mark> は除外し、テキストノードのみを対象とする。
+   * @returns {number} ヒット件数
+   */
+  function highlightKeywordsInElement(el, keywords) {
+    if (!keywords.length) return 0;
+    const pattern = new RegExp(
+      keywords.map(escapeRegex).join("|"),
+      "gi"
+    );
+    let count = 0;
+
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        // すでにハイライト済みの <mark> 内はスキップ
+        if (node.parentElement && node.parentElement.closest("mark.keyword-highlight")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    const textNodes = [];
+    let node;
+    while ((node = walker.nextNode())) {
+      textNodes.push(node);
+    }
+
+    for (const textNode of textNodes) {
+      const text = textNode.nodeValue;
+      pattern.lastIndex = 0;
+      if (!pattern.test(text)) continue;
+      pattern.lastIndex = 0;
+
+      const fragment = document.createDocumentFragment();
+      let lastIdx = 0;
+      let m;
+      while ((m = pattern.exec(text)) !== null) {
+        if (m.index > lastIdx) {
+          fragment.appendChild(document.createTextNode(text.slice(lastIdx, m.index)));
+        }
+        const mark = document.createElement("mark");
+        mark.className = "keyword-highlight";
+        mark.textContent = m[0];
+        fragment.appendChild(mark);
+        count++;
+        lastIdx = m.index + m[0].length;
+      }
+      if (lastIdx < text.length) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIdx)));
+      }
+      textNode.parentNode.replaceChild(fragment, textNode);
+    }
+    return count;
+  }
+
+  /** すべてのキーワードハイライトを除去してテキストノードを元に戻す。 */
+  function removeAllHighlights() {
+    document.querySelectorAll("mark.keyword-highlight").forEach((mark) => {
+      const parent = mark.parentNode;
+      parent.replaceChild(document.createTextNode(mark.textContent), mark);
+      parent.normalize();
+    });
+  }
+
+  /** 差分全体にキーワードハイライトを適用し、TOCバッジを更新する。 */
+  function applyKeywordHighlights() {
+    removeAllHighlights();
+
+    const fileBlocks = Array.from(document.querySelectorAll(".file-block"));
+    fileBlocks.forEach((block, i) => {
+      let fileCount = 0;
+      block.querySelectorAll("pre.diff").forEach((pre) => {
+        fileCount += highlightKeywordsInElement(pre, currentKeywords);
+      });
+
+      const badge = document.getElementById(`kw-badge-${i + 1}`);
+      if (badge) {
+        if (fileCount > 0) {
+          badge.textContent = fileCount;
+          badge.style.display = "inline";
+        } else {
+          badge.style.display = "none";
+        }
+      }
+    });
+  }
+
+  // ── キーワードタグUI ──────────────────────────────────────────────
+
+  function renderKeywordTags(keywords) {
+    const container = document.getElementById("keyword-tags");
+    if (!container) return;
+    container.innerHTML = "";
+    keywords.forEach((word) => {
+      const tag = document.createElement("span");
+      tag.className = "keyword-tag";
+      tag.dataset.word = word;
+
+      const label = document.createTextNode(word);
+      tag.appendChild(label);
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "keyword-tag-del";
+      delBtn.title = "削除";
+      delBtn.setAttribute("aria-label", `${word} を削除`);
+      delBtn.textContent = "×";
+      delBtn.addEventListener("click", () => handleDeleteKeyword(word));
+      tag.appendChild(delBtn);
+
+      container.appendChild(tag);
+    });
+  }
+
+  async function handleAddKeyword() {
+    const input = document.getElementById("keyword-input");
+    if (!input) return;
+    const word = input.value.trim();
+    if (!word) return;
+    try {
+      const result = await postJSON("/api/keywords", { word });
+      if (result.ok) {
+        currentKeywords = result.keywords;
+        renderKeywordTags(currentKeywords);
+        applyKeywordHighlights();
+        input.value = "";
+        input.focus();
+      }
+    } catch (err) {
+      alert("キーワードの追加に失敗しました: " + err.message);
+    }
+  }
+
+  async function handleDeleteKeyword(word) {
+    try {
+      const result = await deleteJSON("/api/keywords", { word });
+      if (result.ok) {
+        currentKeywords = result.keywords;
+        renderKeywordTags(currentKeywords);
+        applyKeywordHighlights();
+      }
+    } catch (err) {
+      alert("キーワードの削除に失敗しました: " + err.message);
+    }
+  }
+
+  // 追加ボタン
+  const addBtn = document.getElementById("keyword-add-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", handleAddKeyword);
+  }
+
+  // Enterキーでも追加
+  const kwInput = document.getElementById("keyword-input");
+  if (kwInput) {
+    kwInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAddKeyword();
+      }
+    });
+  }
+
+  // 削除ボタン（サーバーサイドレンダリング済みのタグ）
+  document.querySelectorAll(".keyword-tag-del").forEach((btn) => {
+    const tag = btn.closest(".keyword-tag");
+    if (!tag) return;
+    const word = tag.dataset.word;
+    btn.addEventListener("click", () => handleDeleteKeyword(word));
+  });
+
+  // 初期ハイライト適用
+  applyKeywordHighlights();
+})();

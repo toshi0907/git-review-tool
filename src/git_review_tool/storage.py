@@ -5,7 +5,7 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-CURRENT_SCHEMA_VERSION = "3"
+CURRENT_SCHEMA_VERSION = "4"
 REPOSITORY_SESSION_BASE_REVISION = "__repository_review_session_base__"
 REPOSITORY_SESSION_TARGET_REVISION = "__repository_review_session_target__"
 
@@ -79,6 +79,12 @@ class Storage:
                 comment_text TEXT NOT NULL DEFAULT '',
                 updated_at   TEXT NOT NULL,
                 PRIMARY KEY (session_id, hunk_hash, new_line_num)
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS keywords (
+                id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                word TEXT NOT NULL UNIQUE
             )
         """)
         conn.execute(
@@ -360,3 +366,28 @@ class Storage:
                 params,
             ).fetchall()
         return {row["hunk_hash"]: bool(row["is_reviewed"]) for row in rows}
+
+    # ── キーワード管理 ──────────────────────────────────────────────────
+
+    def get_keywords(self) -> list[str]:
+        """登録済みキーワード一覧を返す。"""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT word FROM keywords ORDER BY id"
+            ).fetchall()
+        return [row["word"] for row in rows]
+
+    def add_keyword(self, word: str) -> None:
+        """キーワードを追加する（重複は無視）。"""
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO keywords (word) VALUES (?)",
+                (word,),
+            )
+            conn.commit()
+
+    def delete_keyword(self, word: str) -> None:
+        """キーワードを削除する。"""
+        with self._connect() as conn:
+            conn.execute("DELETE FROM keywords WHERE word = ?", (word,))
+            conn.commit()

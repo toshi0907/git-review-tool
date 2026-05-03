@@ -203,3 +203,39 @@ class TestStorageCorruptionRecovery:
         storage.save_comment("hash1", "ok")
 
         assert storage.get_comment("hash1") == "ok"
+
+
+class TestStorageKeywords:
+    def test_get_keywords_empty_initially(self, storage):
+        assert storage.get_keywords() == []
+
+    def test_add_keyword(self, storage):
+        storage.add_keyword("TODO")
+        assert "TODO" in storage.get_keywords()
+
+    def test_add_multiple_keywords(self, storage):
+        storage.add_keyword("TODO")
+        storage.add_keyword("FIXME")
+        keywords = storage.get_keywords()
+        assert "TODO" in keywords
+        assert "FIXME" in keywords
+
+    def test_add_duplicate_keyword_ignored(self, storage):
+        storage.add_keyword("TODO")
+        storage.add_keyword("TODO")
+        assert storage.get_keywords().count("TODO") == 1
+
+    def test_delete_keyword(self, storage):
+        storage.add_keyword("TODO")
+        storage.delete_keyword("TODO")
+        assert "TODO" not in storage.get_keywords()
+
+    def test_delete_nonexistent_keyword_no_error(self, storage):
+        storage.delete_keyword("NONEXISTENT")  # should not raise
+
+    def test_keywords_order_preserved(self, storage):
+        storage.add_keyword("TODO")
+        storage.add_keyword("FIXME")
+        storage.add_keyword("HACK")
+        keywords = storage.get_keywords()
+        assert keywords == ["TODO", "FIXME", "HACK"]

@@ -140,6 +140,7 @@ def create_app(
             commit=commit,
             session_id=session_id,
             pygments_css=pygments_css,
+            keywords=storage.get_keywords(),
         )
 
     @app.route("/api/comment", methods=["POST"])
@@ -210,5 +211,27 @@ def create_app(
             return jsonify({"ok": False, "error": "hunk_hash is required"}), 400
         storage.save_reviewed(hunk_hash, is_reviewed, session_id=session_id)
         return jsonify({"ok": True})
+
+    @app.route("/api/keywords", methods=["GET"])
+    def api_keywords_get():
+        return jsonify({"ok": True, "keywords": storage.get_keywords()})
+
+    @app.route("/api/keywords", methods=["POST"])
+    def api_keywords_add():
+        data = request.get_json(force=True)
+        word = (data.get("word") or "").strip()
+        if not word:
+            return jsonify({"ok": False, "error": "word is required"}), 400
+        storage.add_keyword(word)
+        return jsonify({"ok": True, "keywords": storage.get_keywords()})
+
+    @app.route("/api/keywords", methods=["DELETE"])
+    def api_keywords_delete():
+        data = request.get_json(force=True)
+        word = (data.get("word") or "").strip()
+        if not word:
+            return jsonify({"ok": False, "error": "word is required"}), 400
+        storage.delete_keyword(word)
+        return jsonify({"ok": True, "keywords": storage.get_keywords()})
 
     return app

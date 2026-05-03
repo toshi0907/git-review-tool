@@ -283,15 +283,14 @@
       flex: 1;
     }
     .toc-item a {
-      display: block;
-      padding: 5px 10px 5px 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 8px 5px 13px;
       text-decoration: none;
       color: #24292f;
       font-size: 0.76rem;
       font-family: monospace;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       border-left: 3px solid transparent;
       transition: background 0.1s, color 0.1s;
     }
@@ -331,6 +330,103 @@
     .unreviewed-counter.all-done .unreviewed-badge {
       background: #1a7f37;
     }
+    /* キーワードハイライト */
+    mark.keyword-highlight {
+      background: #fff3b0;
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+      font-weight: bold;
+      outline: 1px solid #e6b800;
+    }
+    .toc-keyword-badge {
+      display: none;
+      margin-left: auto;
+      background: #9a3412;
+      color: #fff;
+      border-radius: 999px;
+      padding: 0 6px;
+      font-size: 0.68rem;
+      font-weight: bold;
+      line-height: 1.6;
+      min-width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .toc-item-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* キーワード設定パネル */
+    .keyword-panel {
+      flex-shrink: 0;
+      border-top: 1px solid #d0d7de;
+      padding: 8px 10px;
+    }
+    .keyword-panel-title {
+      font-size: 0.72rem;
+      font-weight: bold;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .keyword-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+      min-height: 20px;
+    }
+    .keyword-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #fff3b0;
+      border: 1px solid #e6b800;
+      border-radius: 999px;
+      padding: 1px 7px 1px 8px;
+      font-size: 0.72rem;
+      font-family: monospace;
+      color: #3d3d00;
+    }
+    .keyword-tag-del {
+      cursor: pointer;
+      color: #9a3412;
+      font-size: 0.8rem;
+      line-height: 1;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+    .keyword-tag-del:hover { color: #cf222e; }
+    .keyword-add-row {
+      display: flex;
+      gap: 4px;
+    }
+    .keyword-input {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.76rem;
+      padding: 3px 6px;
+      border: 1px solid #d0d7de;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .keyword-add-btn {
+      padding: 3px 8px;
+      font-size: 0.76rem;
+      background: #2da44e;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .keyword-add-btn:hover { background: #2c974b; }
   </style>
 </head>
 <body>
@@ -356,10 +452,22 @@
       <ul class="toc-list">
         {% for file in files %}
         <li class="toc-item" data-file-index="{{ loop.index }}" id="toc-item-{{ loop.index }}">
-          <a href="#file-{{ loop.index }}" title="{{ file.file_path }}">{{ file.file_path | basename }}</a>
+          <a href="#file-{{ loop.index }}" title="{{ file.file_path }}"><span class="toc-item-label">{{ file.file_path | basename }}</span><span class="toc-keyword-badge" id="kw-badge-{{ loop.index }}"></span></a>
         </li>
         {% endfor %}
       </ul>
+      <div class="keyword-panel" id="keyword-panel">
+        <div class="keyword-panel-title">🔍 ワード検出</div>
+        <div class="keyword-tags" id="keyword-tags">
+          {% for kw in keywords %}
+          <span class="keyword-tag" data-word="{{ kw | e }}">{{ kw | e }}<button class="keyword-tag-del" title="削除" aria-label="{{ kw | e }} を削除">×</button></span>
+          {% endfor %}
+        </div>
+        <div class="keyword-add-row">
+          <input class="keyword-input" id="keyword-input" type="text" placeholder="TODO, FIXME …" maxlength="100" autocomplete="off">
+          <button class="keyword-add-btn" id="keyword-add-btn">追加</button>
+        </div>
+      </div>
     </div>
   </nav>
   <div class="page-main">
@@ -440,6 +548,9 @@
     {% endfor %}
   </div>
   </div><!-- .page-main -->
+  <script>
+    window._initialKeywords = {{ keywords | tojson }};
+  </script>
   <script src="/static/app.js"></script>
 </body>
 </html>

@@ -314,3 +314,80 @@ class TestApiLineComment:
             content_type="application/json",
         )
         assert resp.status_code == 400
+
+
+class TestApiKeywords:
+    def test_get_keywords_empty(self, client):
+        resp = client.get("/api/keywords")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert data["keywords"] == []
+
+    def test_add_keyword(self, client):
+        resp = client.post(
+            "/api/keywords",
+            data=json.dumps({"word": "TODO"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert "TODO" in data["keywords"]
+
+    def test_add_keyword_missing_word_returns_400(self, client):
+        resp = client.post(
+            "/api/keywords",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+        assert resp.get_json()["ok"] is False
+
+    def test_add_keyword_empty_word_returns_400(self, client):
+        resp = client.post(
+            "/api/keywords",
+            data=json.dumps({"word": "   "}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_delete_keyword(self, client, storage):
+        storage.add_keyword("TODO")
+        resp = client.delete(
+            "/api/keywords",
+            data=json.dumps({"word": "TODO"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["ok"] is True
+        assert "TODO" not in data["keywords"]
+
+    def test_delete_keyword_missing_word_returns_400(self, client):
+        resp = client.delete(
+            "/api/keywords",
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 400
+
+    def test_keywords_rendered_in_page(self, client, storage):
+        storage.add_keyword("TODO")
+        storage.add_keyword("FIXME")
+        resp = client.get("/")
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8")
+        assert "TODO" in html
+        assert "FIXME" in html
+
+    def test_keyword_panel_present(self, client):
+        resp = client.get("/")
+        assert b'id="keyword-panel"' in resp.data
+
+    def test_initial_keywords_json_in_page(self, client, storage):
+        storage.add_keyword("TODO")
+        resp = client.get("/")
+        html = resp.data.decode("utf-8")
+        assert "_initialKeywords" in html
+        assert "TODO" in html

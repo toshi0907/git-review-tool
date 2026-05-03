@@ -94,8 +94,8 @@ fi
 - 単一コミット差分（`git show`）と2コミット間差分（`git diff`）を表示
 - コミットの unified diff を hunk 単位に分解して表示
 - **非UTF-8エンコーディング対応**: UTF-8 / EUC-JP / CP932（Shift_JIS互換）を自動検出。`--encoding` オプションで明示指定も可能
-- hunk ごとにコメントを入力・保存
-- hunk コメントの削除
+- **ワード検出**: `GIT_REVIEW_TOOL_KEYWORDS` 環境変数（またはUI）で登録したキーワード（TODO, FIXME 等）を差分内でハイライト表示し、左サイドバーの各ファイルにマッチ件数バッジを表示
+- hunk ごとにコメントを入力・保存- hunk コメントの削除
 - hunk コメントのリセット（未保存変更を破棄）
 - hunk ごとに「レビュー済み」チェックボックスで状態管理
 - コメント・レビュー状態は SQLite に永続化（サーバ再起動後も復元）
@@ -178,6 +178,7 @@ GIT_REVIEW_TOOL_COMMIT=abc1234 GIT_REVIEW_TOOL_REPO_PATH=/path/to/repo GIT_REVIE
 | `GIT_REVIEW_TOOL_REPO_PATH` | `.`（カレントディレクトリ） | レビュー対象gitリポジトリのパス |
 | `GIT_REVIEW_TOOL_PORT` | `5000` | ホスト側の公開ポート（コンテナ内部は常にポート 5000）。デフォルトでは `127.0.0.1` にバインドされます |
 | `GIT_REVIEW_TOOL_ENCODING` | なし（自動検出） | 差分のエンコーディング（例: `euc-jp`） |
+| `GIT_REVIEW_TOOL_KEYWORDS` | なし | ワード検出キーワード（カンマ区切り、例: `TODO,FIXME,HACK`）。起動時にストレージへシードされ、UI からも追加・削除可能 |
 | `GIT_REVIEW_TOOL_MODE` | `serve` | 動作モード。`serve`: Flaskサーバ起動（デフォルト）、`check`: レビュー完了確認のみ実行（exit 0: 完了, exit 1: 未完了） |
 
 > **注意**: コンテナ内の SQLite データベースは `review-data` という名前付きボリュームに保存されます。  

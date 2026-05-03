@@ -10,6 +10,7 @@ class FakeStorage:
     def __init__(self, _db_path: str):
         self._reviewed: dict[str, bool] = {}
         self._session_id = 1
+        self._keywords: list[str] = []
 
     def get_or_create_repository_session(self, repository_path: str) -> int:
         if repository_path != "/repo":
@@ -20,6 +21,13 @@ class FakeStorage:
         self, hunk_hashes: list[str], session_id: int = 0
     ) -> dict[str, bool]:
         return {h: self._reviewed.get(h, False) for h in hunk_hashes}
+
+    def add_keyword(self, word: str) -> None:
+        if word not in self._keywords:
+            self._keywords.append(word)
+
+    def get_keywords(self) -> list[str]:
+        return self._keywords.copy()
 
 
 class FakeStorageAllReviewed(FakeStorage):
@@ -93,6 +101,68 @@ def test_target_keyword_without_base_raises_error(monkeypatch):
         cli.main()
 
     assert exc_info.value.code == 2
+
+
+def test_env_keywords_are_seeded_into_storage(monkeypatch):
+    """GIT_REVIEW_TOOL_KEYWORDS 環境変数で指定したキーワードがストレージに登録される。"""
+    monkeypatch.delenv("GIT_REVIEW_TOOL_AUTO_BASE_BRANCH", raising=False)
+    monkeypatch.delenv("GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD", raising=False)
+    monkeypatch.setenv("GIT_REVIEW_TOOL_KEYWORDS", "TODO, FIXME, HACK")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["git-review-tool", "abc123", "--repo", "/repo", "--db", "/tmp/test.sqlite3"],
+    )
+    monkeypatch.setattr(
+        cli, "get_diff",
+        lambda *_a, **_kw: "diff --git a/a b/a\n@@ -1 +1 @@\n-a\n+b\n",
+    )
+    monkeypatch.setattr(
+        cli, "parse_diff",
+        lambda _text: [{"file_path": "a", "hunks": [{"body_lines": ["+b"]}]}],
+    )
+    monkeypatch.setattr(cli, "compute_hunk_hash", lambda _path, _lines: "hunkhash")
+
+    captured_storage: list[FakeStorage] = []
+
+    class CapturingFakeStorage(FakeStorage):
+        def __init__(self, db_path: str):
+            super().__init__(db_path)
+            captured_storage.append(self)
+
+    monkeypatch.setattr(cli, "Storage", CapturingFakeStorage)
+    monkeypatch.setattr(cli, "create_app", lambda **_kwargs: FakeApp())
+
+    cli.main()
+
+    assert len(captured_storage) == 1
+    keywords = captured_storage[0].get_keywords()
+    assert "TODO" in keywords
+    assert "FIXME" in keywords
+    assert "HACK" in keywords
+
+
+def test_env_keywords_empty_string_no_error(monkeypatch):
+    """GIT_REVIEW_TOOL_KEYWORDS が空文字のとき、エラーなく起動できる。"""
+    monkeypatch.delenv("GIT_REVIEW_TOOL_AUTO_BASE_BRANCH", raising=False)
+    monkeypatch.delenv("GIT_REVIEW_TOOL_AUTO_TARGET_MSG_KWD", raising=False)
+    monkeypatch.setenv("GIT_REVIEW_TOOL_KEYWORDS", "")
+    monkeypatch.setattr(
+        "sys.argv",
+        ["git-review-tool", "abc123", "--repo", "/repo", "--db", "/tmp/test.sqlite3"],
+    )
+    monkeypatch.setattr(
+        cli, "get_diff",
+        lambda *_a, **_kw: "diff --git a/a b/a\n@@ -1 +1 @@\n-a\n+b\n",
+    )
+    monkeypatch.setattr(
+        cli, "parse_diff",
+        lambda _text: [{"file_path": "a", "hunks": [{"body_lines": ["+b"]}]}],
+    )
+    monkeypatch.setattr(cli, "compute_hunk_hash", lambda _path, _lines: "hunkhash")
+    monkeypatch.setattr(cli, "Storage", FakeStorage)
+    monkeypatch.setattr(cli, "create_app", lambda **_kwargs: FakeApp())
+
+    cli.main()  # should not raise
 
 
 # ── check_main tests ────────────────────────────────────────────────────────

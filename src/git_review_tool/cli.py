@@ -179,6 +179,11 @@ def main() -> None:
     storage = Storage(db_path)
     session_id = storage.get_or_create_repository_session(repository_path=repo_path)
 
+    # 環境変数からキーワードをシード（既存キーワードは重複無視）
+    env_keywords = os.getenv("GIT_REVIEW_TOOL_KEYWORDS", "")
+    for kw in (w.strip() for w in env_keywords.split(",") if w.strip()):
+        storage.add_keyword(kw)
+
     # Flask アプリ起動
     commit_label = f"{base}..{commit}" if base else commit
     app = create_app(

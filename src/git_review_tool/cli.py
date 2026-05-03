@@ -180,7 +180,8 @@ def main() -> None:
     session_id = storage.get_or_create_repository_session(repository_path=repo_path)
 
     # 環境変数からキーワードをシード（既存キーワードは重複無視）
-    env_keywords = os.getenv("GIT_REVIEW_TOOL_KEYWORDS", "")
+    # デフォルトは TODO と FIXME
+    env_keywords = os.getenv("GIT_REVIEW_TOOL_KEYWORDS", "TODO,FIXME")
     for kw in (w.strip() for w in env_keywords.split(",") if w.strip()):
         storage.add_keyword(kw)
 
